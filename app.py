@@ -2,6 +2,7 @@
 import json
 import os
 import sqlite3
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -14,13 +15,14 @@ DEFAULT_CONFIG_PATH = BASE_DIR / "config" / "palace.json"
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-6")
+    app.config["TEMPLATES_AUTO_RELOAD"] = True
+    asset_version_override = os.getenv("ASSET_VERSION", "").strip()
     palace_root = load_palace_path_from_config()
     db_path = resolve_db_path(palace_root)
 
     @app.get("/")
     def index():
-        return render_template("index.html", asset_version=asset_version)
+        return render_template("index.html", asset_version=current_asset_version(asset_version_override))
 
     @app.get("/healthz")
     def healthz():
@@ -440,6 +442,32 @@ def parse_int_arg(name: str, default: int) -> int:
         return int(raw)
     except ValueError:
         raise_bad_request(f"Invalid integer for '{name}': {raw}")
+
+
+@lru_cache(maxsize=1)
+def asset_paths() -> tuple[Path, ...]:
+    return (
+        BASE_DIR / "static" / "app.css",
+        BASE_DIR / "static" / "app.js",
+        BASE_DIR / "static" / "graph-view.js",
+        BASE_DIR / "templates" / "index.html",
+    )
+
+
+def current_asset_version(override: str) -> str:
+    if override:
+        return override
+
+    latest = 0
+    for path in asset_paths():
+        try:
+            latest = max(latest, int(path.stat().st_mtime))
+        except FileNotFoundError:
+            continue
+
+    if latest <= 0:
+        return "dev"
+    return str(latest)
 
 
 if __name__ == "__main__":

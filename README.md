@@ -44,6 +44,17 @@ cp .env.example .env
 ./scripts/docker-up.sh
 ```
 
+Dev hot-reload mode is enabled by default in Docker:
+- app code, templates, and static files are bind-mounted from the repo
+- Gunicorn runs with `--reload` by default
+- edit files and refresh browser, no image rebuild needed
+
+Force a rebuild only when dependencies/base image changed:
+
+```bash
+./scripts/docker-up.sh --build
+```
+
 Open <http://127.0.0.1:8099>
 
 ## Features
@@ -74,7 +85,8 @@ cp .env.example .env
 ```
 
 - App runs on `http://127.0.0.1:${PORT:-8099}` (bound to `${BIND_HOST:-127.0.0.1}`)
-- Container mounts only `PALACE_PATH` as read-only at `/app/palace`
+- Container mounts `PALACE_PATH` (read-only) at `/app/palace`
+- Container also bind-mounts `app.py`, `config/`, `templates/`, and `static/` for live-reload development
 - App reads config from `/app/config/palace.json`
 
 ### Optional Cloudflare Tunnel

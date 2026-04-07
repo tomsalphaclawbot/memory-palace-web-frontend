@@ -7,8 +7,13 @@ services:
       APP_CONFIG_FILE: /app/config/palace.json
       HOST: 0.0.0.0
       PORT: 8099
+      GUNICORN_CMD_ARGS: ${GUNICORN_CMD_ARGS:---reload}
     volumes:
       - ${PALACE_PATH:-./palace}:/app/palace:ro
+      - ./app.py:/app/app.py:ro
+      - ./config:/app/config:ro
+      - ./templates:/app/templates:ro
+      - ./static:/app/static:ro
     ports:
       - "${BIND_HOST:-127.0.0.1}:${PORT:-8099}:8099"
     healthcheck:
