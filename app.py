@@ -14,7 +14,7 @@ DEFAULT_CONFIG_PATH = BASE_DIR / "config" / "palace.json"
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-4")
+    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-5")
     palace_root = load_palace_path_from_config()
     db_path = resolve_db_path(palace_root)
 
@@ -326,6 +326,55 @@ def create_app() -> Flask:
             )
 
         return jsonify({"nodes": nodes, "edges": edges})
+
+    @app.get("/api/graph_drawers")
+    def graph_drawers():
+        room = (request.args.get("room") or "").strip()
+        if not room:
+            raise_bad_request("room is required")
+
+        limit = min(max(parse_int_arg("limit", 40), 1), 200)
+
+        with connect_readonly(db_path) as conn:
+            rows = conn.execute(
+                """
+                WITH meta AS (
+                  SELECT
+                    e.id,
+                    e.embedding_id,
+                    MAX(CASE WHEN m.key='room' THEN m.string_value END) AS room,
+                    MAX(CASE WHEN m.key='source_file' THEN m.string_value END) AS source_file,
+                    MAX(CASE WHEN m.key='chunk_index' THEN COALESCE(m.int_value, CAST(m.string_value AS INTEGER)) END) AS chunk_index
+                  FROM embeddings e
+                  JOIN embedding_metadata m ON m.id=e.id
+                  GROUP BY e.id
+                )
+                SELECT embedding_id, room, source_file, chunk_index
+                FROM meta
+                WHERE room = ?
+                ORDER BY chunk_index ASC, embedding_id ASC
+                LIMIT ?
+                """,
+                [room, limit],
+            ).fetchall()
+
+        drawers = []
+        for row in rows:
+            source_file = row["source_file"] or ""
+            source_label = Path(source_file).name if source_file else "drawer"
+            chunk_index = row["chunk_index"]
+            chunk_label = f"#{chunk_index}" if chunk_index is not None else ""
+            drawers.append(
+                {
+                    "embedding_id": row["embedding_id"],
+                    "room": row["room"],
+                    "source_file": source_file,
+                    "chunk_index": chunk_index,
+                    "label": f"{source_label}{chunk_label}",
+                }
+            )
+
+        return jsonify({"room": room, "drawers": drawers, "count": len(drawers)})
 
     return app
 

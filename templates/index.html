@@ -102,13 +102,22 @@
           <article class="panel-card">
             <div class="panel-head">
               <h2>Graph View</h2>
+            </div>
+            <p class="muted">Interactive memory graph, click nodes to expand clusters, hover to explore local neighborhoods.</p>
+
+            <div class="graph-toolbar">
+              <input id="graphSearchInput" type="text" placeholder="Filter concepts, rooms, wings, drawers..." />
+              <button id="graphSearchBtn">Filter</button>
+              <button id="graphClearSearchBtn" class="ghost">Clear</button>
+              <button id="graphResetViewBtn" class="ghost">Reset View</button>
               <button id="graphRefreshBtn" class="ghost">Refresh Graph</button>
             </div>
-            <p class="muted">Wing to Room connectivity from the current palace.</p>
-            <div class="graph-wrap">
-              <svg id="graphSvg" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet"></svg>
+
+            <div class="graph-wrap" id="graphWrap">
+              <canvas id="graphCanvas"></canvas>
             </div>
-            <div class="panel-meta" id="graphMeta"></div>
+            <div class="panel-meta" id="graphLegend"></div>
+            <div class="panel-meta" id="graphStatus"></div>
           </article>
         </section>
 
@@ -129,6 +138,7 @@
       </article>
     </dialog>
 
+    <script src="{{ url_for('static', filename='graph-view.js') }}?v={{ asset_version }}"></script>
     <script src="{{ url_for('static', filename='app.js') }}?v={{ asset_version }}"></script>
   </body>
 </html>

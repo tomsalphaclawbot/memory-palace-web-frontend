@@ -315,19 +315,33 @@ li button.active-filter {
   margin-bottom: 12px;
 }
 
+.graph-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.graph-toolbar input {
+  flex: 1 1 320px;
+  min-width: 200px;
+}
+
 .graph-wrap {
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff;
+  background: #0f1220;
   overflow: hidden;
-  min-height: 420px;
+  min-height: 380px;
   margin: 10px 0;
 }
 
-#graphSvg {
+#graphCanvas {
   width: 100%;
-  height: auto;
+  height: min(68vh, 760px);
   display: block;
+  touch-action: none;
 }
 
 .graph-edge {
@@ -412,7 +426,18 @@ dialog pre {
   .sidebar {
     border-right: none;
     border-bottom: 1px solid var(--sidebar-border);
-    padding-bottom: 12px;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 10px;
+    padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+
+  .brand {
+    font-size: 15px;
   }
 
   .side-nav {
@@ -420,7 +445,8 @@ dialog pre {
     flex-wrap: nowrap;
     overflow-x: auto;
     gap: 8px;
-    padding-bottom: 2px;
+    padding-bottom: 0;
+    justify-content: flex-start;
   }
 
   .side-nav::-webkit-scrollbar {
@@ -430,6 +456,12 @@ dialog pre {
   .nav-item {
     white-space: nowrap;
     flex: 0 0 auto;
+    padding: 7px 10px;
+    font-size: 13px;
+  }
+
+  .workspace {
+    padding: 12px;
   }
 
   .searchbar {
@@ -442,5 +474,29 @@ dialog pre {
 
   .panel-card h2 {
     font-size: 20px;
+  }
+}
+
+@media (max-width: 560px) {
+  .brand span:last-child {
+    display: none;
+  }
+
+  .scope-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .scope-tab {
+    white-space: nowrap;
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+
+  .graph-toolbar button,
+  .searchbar button {
+    padding: 7px 9px;
+    font-size: 12px;
   }
 }
