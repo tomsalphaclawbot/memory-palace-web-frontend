@@ -62,7 +62,6 @@ cp .env.example .env
 - Drawer search and pagination
 - Drawer detail view
 - Works with a direct SQLite file path or palace root path
-- Optional Cloudflare Tunnel sidecar for Access-gated publishing
 
 ## API
 
@@ -87,10 +86,6 @@ cp .env.example .env
 - App runs on `http://127.0.0.1:${PORT:-8099}` (bound to `${BIND_HOST:-127.0.0.1}`)
 - The container mounts only `PALACE_PATH` as read-only at `/palace`
 
-### Optional Cloudflare Tunnel
-
-If `CLOUDFLARED_TUNNEL_TOKEN` is set, `scripts/docker-up.sh` also starts cloudflared using the `tunnel` profile.
-
 Stop:
 
 ```bash
@@ -107,7 +102,6 @@ Logs:
 
 - Read-only SQLite connection (`mode=ro`)
 - Least-privilege Docker mount (single explicit palace path)
-- Cloudflare exposure is optional and intended to be protected by Cloudflare Access
 - No secrets should be committed to this repository
 
 ## Development

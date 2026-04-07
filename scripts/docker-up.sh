@@ -16,14 +16,7 @@ set +a
 PALACE_PATH="${PALACE_PATH:-./palace}"
 export PALACE_PATH
 
-if [[ -n "${CLOUDFLARED_TUNNEL_TOKEN:-}" ]]; then
-  docker compose --profile tunnel up -d --build
-else
-  docker compose up -d --build
-fi
+docker compose up -d --build
 
 echo "\n✅ Stack started"
 echo "Local:    http://${BIND_HOST:-127.0.0.1}:${PORT:-8099}"
-if [[ -n "${PUBLIC_URL:-}" ]]; then
-  echo "Public:   ${PUBLIC_URL}"
-fi
