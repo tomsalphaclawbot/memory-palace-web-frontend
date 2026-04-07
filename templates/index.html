@@ -115,23 +115,23 @@
             </div>
 
             <div class="graph-engine-tabs" role="tablist" aria-label="Graph renderer options">
-              <button class="graph-engine-tab active" data-graph-engine="sigma">Sigma.js</button>
+              <button class="graph-engine-tab active" data-graph-engine="neo4">Neo4j</button>
+              <button class="graph-engine-tab" data-graph-engine="sigma">Sigma.js</button>
               <button class="graph-engine-tab" data-graph-engine="cytoscape">Cytoscape.js</button>
               <button class="graph-engine-tab" data-graph-engine="g6">AntV G6</button>
               <button class="graph-engine-tab" data-graph-engine="vis">vis-network</button>
               <button class="graph-engine-tab" data-graph-engine="d3">D3 Force</button>
               <button class="graph-engine-tab" data-graph-engine="force">ForceGraph</button>
-              <button class="graph-engine-tab" data-graph-engine="neo4">Neo4j</button>
             </div>
 
             <div class="graph-wrap" id="graphWrap">
-              <div id="graphSigma" class="graph-engine-panel active"></div>
+              <div id="graphNeo4" class="graph-engine-panel active"></div>
+              <div id="graphSigma" class="graph-engine-panel"></div>
               <div id="graphCytoscape" class="graph-engine-panel"></div>
               <div id="graphG6" class="graph-engine-panel"></div>
               <div id="graphVis" class="graph-engine-panel"></div>
               <svg id="graphD3" class="graph-engine-panel"></svg>
               <div id="graphForce" class="graph-engine-panel"></div>
-              <div id="graphNeo4" class="graph-engine-panel"></div>
             </div>
             <div class="panel-meta" id="graphLegend"></div>
             <div class="panel-meta" id="graphStatus"></div>

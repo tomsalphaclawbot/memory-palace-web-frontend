@@ -109,7 +109,7 @@ function setActiveView(view, updateHash = false) {
 
 function getActiveGraphEngine() {
   const active = document.querySelector('.graph-engine-tab.active');
-  return (active && active.dataset && active.dataset.graphEngine) || 'sigma';
+  return (active && active.dataset && active.dataset.graphEngine) || 'neo4';
 }
 
 function setActiveScope(scope) {
@@ -464,11 +464,11 @@ async function loadGraphNeo4(options = {}) {
     graphSourceState.source = 'neo4';
     window.GraphView.load(graph);
   } catch (err) {
-    if (graphSourceState.cacheDefault) {
-      window.GraphView.load(graphSourceState.cacheDefault);
-      graphSourceState.source = 'default';
+    await loadGraphDefault(options);
+    const reason = err && err.message ? err.message : String(err);
+    if (el.graphStatus) {
+      el.graphStatus.textContent = `Neo4 live query unavailable (${reason}). Showing local graph dataset.`;
     }
-    throw new Error(`Neo4 live query unavailable: ${err.message || String(err)}`);
   }
 }
 

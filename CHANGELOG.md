@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Neo4j is now the default selected graph renderer tab.
+- Reordered graph renderer tabs to put Neo4j first.
+- Graph view now falls back to local graph data when Neo4 live query is unavailable, with an in-UI status message instead of a hard load failure.
+
 ## [1.0.0] - 2026-04-07
 
 ### Added

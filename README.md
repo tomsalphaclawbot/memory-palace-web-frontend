@@ -64,7 +64,7 @@ Open <http://127.0.0.1:8099>
 - Wing and room navigation
 - Drawer search and pagination
 - Drawer detail view
-- Neo4j renderer mode with live Bolt-backed graph queries (optional)
+- Neo4j renderer mode (default graph tab) with optional live Bolt-backed graph queries
 - Config-file-driven palace target (`config/palace.json`)
 - Optional Cloudflare Tunnel sidecar for Access-gated publishing
 
@@ -100,6 +100,8 @@ Optional live Neo4j/Bolt integration (used by the Neo4j graph renderer):
 - `NEO4J_USER=<username>`
 - `NEO4J_PASSWORD=<password>`
 - `NEO4J_DATABASE=neo4j`
+
+If Neo4j is not configured/reachable, the graph view falls back to local graph data and shows a status message in the UI.
 
 ### Optional Cloudflare Tunnel
 

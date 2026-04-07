@@ -14,7 +14,7 @@
   const state = {
     raw: { nodes: [], edges: [] },
     graph: { nodes: [], edges: [] },
-    engine: 'sigma',
+    engine: 'neo4',
     query: '',
     typeFilter: '',
     expandedRooms: new Set(),
@@ -107,7 +107,7 @@
 
     if (ui.legend) {
       ui.legend.textContent =
-        'Renderers: Sigma.js, Cytoscape.js, AntV G6, vis-network, D3 Force, ForceGraph, Neo4j. Click room to expand/collapse drawers. Click wing to focus neighborhood. Hover highlights local links.';
+        'Renderers: Neo4j, Sigma.js, Cytoscape.js, AntV G6, vis-network, D3 Force, ForceGraph. Click room to expand/collapse drawers. Click wing to focus neighborhood. Hover highlights local links.';
     }
 
     setEngine(state.engine, false);
