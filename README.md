@@ -6,6 +6,55 @@ A lightweight, read-only web UI and JSON API for browsing a MemPalace SQLite sto
 
 - Upstream MemPalace: <https://github.com/milla-jovovich/mempalace>
 
+## Version
+
+- Current version: `0.1.0` (see [`VERSION`](./VERSION))
+- Version history log: [CHANGELOG.md](./CHANGELOG.md)
+
+## Quick start guide
+
+### Option A: Local run
+
+1. Copy env template:
+
+```bash
+cp .env.example .env
+```
+
+2. Set `MEMORY_PALACE_PATH` in `.env` (palace dir or `chroma.sqlite3` file).
+3. Install dependencies:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+4. Start app:
+
+```bash
+./scripts/run.sh
+```
+
+5. Open <http://127.0.0.1:8099>
+
+### Option B: Docker run
+
+1. Copy env template:
+
+```bash
+cp .env.example .env
+```
+
+2. (Optional) set `PALACE_PATH` in `.env` (defaults to `./palace`).
+3. Start:
+
+```bash
+./scripts/docker-up.sh
+```
+
+4. Open <http://127.0.0.1:8099>
+
 ## Features
 
 - Read-only API over `chroma.sqlite3`
@@ -27,17 +76,7 @@ All endpoints support optional `?palace=/path/to/palace-or-sqlite`.
 - `GET /api/drawer/<embedding_id>`
 - `GET /healthz`
 
-## Quick start (local)
-
-```bash
-cp .env.example .env
-# set MEMORY_PALACE_PATH to your palace path or chroma.sqlite3
-./scripts/run.sh
-```
-
-Open <http://127.0.0.1:8099>
-
-## Docker
+## Docker details
 
 ```bash
 cp .env.example .env
@@ -74,6 +113,14 @@ Logs:
 ## Development
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## Wishlist / Coming soon
+
+- Saved search presets in the UI
+- Wing and room analytics dashboard
+- Export views (JSON/CSV) for filtered result sets
+- Optional auth provider integrations for self-hosted installs
+- Better large-palace performance with indexed search tuning
 
 ## License
 

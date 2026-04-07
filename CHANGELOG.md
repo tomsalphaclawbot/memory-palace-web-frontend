@@ -7,6 +7,8 @@ and this project currently tracks changes on `main` until a first tagged release
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-04-07
+
 ### Added
 - Open-source governance files: LICENSE, CONTRIBUTING, CODE_OF_CONDUCT, SECURITY.
 - GitHub issue and PR templates.
