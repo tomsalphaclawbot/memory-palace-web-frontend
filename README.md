@@ -8,7 +8,7 @@ A lightweight, read-only web UI and JSON API for browsing a MemPalace SQLite sto
 
 ## Version
 
-- Current version: `0.1.0` (see [`VERSION`](./VERSION))
+- Current version: `1.0.0` (see [`VERSION`](./VERSION))
 - Version history log: [CHANGELOG.md](./CHANGELOG.md)
 
 ## Quick start guide

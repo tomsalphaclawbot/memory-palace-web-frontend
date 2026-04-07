@@ -30,7 +30,7 @@
 - [ ] Add optional auth integration patterns for self-hosted installs.
 - [ ] Add performance tuning guide for large palaces.
 - [ ] Add screenshots/GIF demo to README.
-- [ ] Tag first release (`v0.1.0`) and add release notes from `CHANGELOG.md`.
+- [ ] Tag public release (`v1.0.0`) and add release notes from `CHANGELOG.md`.
 
 ## Other view ideas
 - [ ] Constellation view (wing clusters with room orbits)
