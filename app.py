@@ -10,14 +10,15 @@ from werkzeug.exceptions import BadRequest
 
 def create_app() -> Flask:
     app = Flask(__name__)
+    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-2")
 
     @app.get("/")
     def index():
-        return render_template("index.html")
+        return render_template("index.html", asset_version=asset_version)
 
     @app.get("/settings")
     def settings_page():
-        return render_template("settings.html")
+        return render_template("settings.html", asset_version=asset_version)
 
     @app.get("/healthz")
     def healthz():
