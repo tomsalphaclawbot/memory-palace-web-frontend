@@ -1,41 +1,62 @@
-# memory-palace-web-frontend
+# Memory Palace Web Frontend
 
-Web UI for browsing a MemPalace store live.
+A lightweight, read-only web UI and JSON API for browsing a MemPalace SQLite store.
 
-## What it does
+This repository is the open-source frontend project.
 
-- Point at any `chroma.sqlite3`-backed memory palace
-- Browse by wing and room
-- Search drawer text
-- Open full drawer content
-- Paginated live view of drawers
-- Deploy behind Cloudflare Tunnel on its own subdomain
+## Related projects
 
-## Local run (non-Docker)
+- **MemPalace (fork, public):** <https://github.com/tomsalphaclawbot/mempalace>
+- **Alpha Mem Palace (operations, private):** internal runtime/data project
+- **Memory Palace Web Frontend (this repo, public):** <https://github.com/tomsalphaclawbot/memory-palace-web-frontend>
+
+## Features
+
+- Read-only API over `chroma.sqlite3`
+- Wing and room navigation
+- Drawer search and pagination
+- Drawer detail view
+- Works with a direct SQLite file path or palace root path
+- Optional Cloudflare Tunnel sidecar for Access-gated publishing
+
+## API
+
+All endpoints support optional `?palace=/path/to/palace-or-sqlite`.
+
+- `GET /api/config`
+- `GET /api/summary`
+- `GET /api/wings`
+- `GET /api/rooms?wing=<name>`
+- `GET /api/drawers?wing=&room=&q=&limit=&offset=`
+- `GET /api/drawer/<embedding_id>`
+- `GET /healthz`
+
+## Quick start (local)
 
 ```bash
-cd projects/memory-palace-web-frontend
+cp .env.example .env
+# set MEMORY_PALACE_PATH to your palace path or chroma.sqlite3
 ./scripts/run.sh
 ```
 
-Open: `http://127.0.0.1:8099`
+Open <http://127.0.0.1:8099>
 
-## Docker run (recommended)
+## Docker
 
 ```bash
-cd projects/memory-palace-web-frontend
+cp .env.example .env
+# set PALACE_PATH to an absolute host path to your palace directory or sqlite file
 ./scripts/docker-up.sh
 ```
 
-This starts:
-- `memory-palace-web-frontend` (Flask/Gunicorn)
-- `cloudflared-memory-palace-web-frontend` (Cloudflare Tunnel)
+- App runs on `http://127.0.0.1:${PORT:-8099}` (bound to `${BIND_HOST:-127.0.0.1}`)
+- The container mounts only `PALACE_PATH` as read-only at `/palace`
 
-Endpoints:
-- Local: `http://127.0.0.1:8099`
-- Public (tunnel): `https://memory-palace.tomsalphaclawbot.work`
+### Optional Cloudflare Tunnel
 
-Stop stack:
+If `CLOUDFLARED_TUNNEL_TOKEN` is set, `scripts/docker-up.sh` also starts cloudflared using the `tunnel` profile.
+
+Stop:
 
 ```bash
 ./scripts/docker-down.sh
@@ -47,43 +68,17 @@ Logs:
 ./scripts/docker-logs.sh
 ```
 
-## SQLite mount model in Docker
+## Security model
 
-Yes, the app runs in Docker and reads SQLite via bind mount.
+- Read-only SQLite connection (`mode=ro`)
+- Least-privilege Docker mount (single explicit palace path)
+- Cloudflare exposure is optional and intended to be protected by Cloudflare Access
+- No secrets should be committed to this repository
 
-Least-privilege default: only one palace path is mounted read-only.
+## Development
 
-Default mounted path:
+See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-`/Users/openclaw/.openclaw/workspace/projects/alpha-mem-palace/data/palace`
+## License
 
-No full home-directory mount is used.
-
-## Point to a different palace
-
-Set `PALACE_PATH` when launching (this controls both mount and default runtime path):
-
-```bash
-PALACE_PATH=/Users/openclaw/path/to/another/palace ./scripts/docker-up.sh
-```
-
-or, if that path is already mounted, override per API request with query param:
-
-`?palace=/Users/openclaw/path/to/palace`
-
-Path resolution supports:
-- direct sqlite file path
-- `<path>/chroma.sqlite3`
-- `<path>/data/palace/chroma.sqlite3`
-- `<path>/palace/chroma.sqlite3`
-
-## API
-
-- `GET /api/config`
-- `GET /api/summary`
-- `GET /api/wings`
-- `GET /api/rooms?wing=<name>`
-- `GET /api/drawers?wing=&room=&q=&limit=&offset=`
-- `GET /api/drawer/<embedding_id>`
-
-All APIs accept optional `?palace=/path/to/palace`.
+MIT (see [LICENSE](./LICENSE)).

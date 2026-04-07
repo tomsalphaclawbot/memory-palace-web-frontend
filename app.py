@@ -15,6 +15,10 @@ def create_app() -> Flask:
     def index():
         return render_template("index.html")
 
+    @app.get("/healthz")
+    def healthz():
+        return jsonify({"ok": True})
+
     @app.errorhandler(BadRequest)
     def handle_bad_request(err):
         if request.path.startswith("/api/"):
@@ -96,8 +100,8 @@ def create_app() -> Flask:
         wing = (request.args.get("wing") or "").strip()
         room = (request.args.get("room") or "").strip()
         query = (request.args.get("q") or "").strip()
-        limit = min(max(int(request.args.get("limit", 50)), 1), 200)
-        offset = max(int(request.args.get("offset", 0)), 0)
+        limit = min(max(parse_int_arg("limit", 50), 1), 200)
+        offset = max(parse_int_arg("offset", 0), 0)
 
         where_clauses: list[str] = []
         params: list[Any] = []
@@ -239,6 +243,16 @@ def resolve_db_path(palace_path: str) -> Path:
 
 def raise_bad_request(message: str):
     raise BadRequest(description=message)
+
+
+def parse_int_arg(name: str, default: int) -> int:
+    raw = request.args.get(name)
+    if raw is None or raw == "":
+        return default
+    try:
+        return int(raw)
+    except ValueError:
+        raise_bad_request(f"Invalid integer for '{name}': {raw}")
 
 
 if __name__ == "__main__":

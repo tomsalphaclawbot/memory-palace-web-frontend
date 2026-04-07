@@ -4,21 +4,25 @@ services:
     container_name: memory-palace-web-frontend
     restart: unless-stopped
     environment:
-      # Point this to exactly one palace path on host (or one mounted sqlite file path).
-      MEMORY_PALACE_PATH: ${PALACE_PATH:-/Users/openclaw/.openclaw/workspace/projects/alpha-mem-palace/data/palace}
-    # Least privilege: mount only the selected palace path, read-only.
+      MEMORY_PALACE_PATH: /palace
+      HOST: 0.0.0.0
+      PORT: 8099
     volumes:
-      - ${PALACE_PATH:-/Users/openclaw/.openclaw/workspace/projects/alpha-mem-palace/data/palace}:${PALACE_PATH:-/Users/openclaw/.openclaw/workspace/projects/alpha-mem-palace/data/palace}:ro
+      - ${PALACE_PATH:?Set PALACE_PATH in .env}:/palace:ro
     ports:
-      - "127.0.0.1:8099:8099"
+      - "${BIND_HOST:-127.0.0.1}:${PORT:-8099}:8099"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8099/healthz', timeout=5)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
 
   cloudflared-memory-palace-web-frontend:
     image: cloudflare/cloudflared:latest
     container_name: cloudflared-memory-palace-web-frontend
     restart: unless-stopped
     depends_on:
-      - memory-palace-web-frontend
-    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
-    volumes:
-      - ./cloudflared-config.yml:/etc/cloudflared/config.yml:ro
-      - /Users/openclaw/.cloudflared/e6fab79b-bfed-4084-8475-c29606aa71f8.json:/etc/cloudflared/creds.json:ro
+      memory-palace-web-frontend:
+        condition: service_healthy
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN:-}
+    profiles: ["tunnel"]
