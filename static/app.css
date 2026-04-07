@@ -23,6 +23,7 @@ body {
   font-family: Inter, "Avenir Next", "Segoe UI", sans-serif;
   background: var(--bg);
   color: var(--text);
+  -webkit-text-size-adjust: 100%;
 }
 
 h2,
@@ -455,52 +456,62 @@ dialog pre {
   .sidebar {
     border-right: none;
     border-bottom: 1px solid var(--sidebar-border);
-    display: flex;
-    flex-direction: row;
+    display: grid;
+    grid-template-columns: auto 1fr;
     align-items: center;
     gap: 8px;
-    padding: calc(6px + env(safe-area-inset-top)) 8px 6px;
+    padding: calc(4px + env(safe-area-inset-top)) 8px 4px;
     position: sticky;
     top: 0;
     z-index: 30;
+    max-height: calc(46px + env(safe-area-inset-top));
+    overflow: hidden;
   }
 
   .brand {
-    font-size: 13px;
+    font-size: 11px;
     flex: 0 0 auto;
+    gap: 6px;
   }
 
   .brand-icon {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
   }
 
   .brand-name {
-    display: none;
+    display: block;
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .side-nav {
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
-    gap: 6px;
+    overflow-y: hidden;
+    gap: 5px;
     padding-bottom: 0;
     justify-content: flex-start;
     min-width: 0;
     width: 100%;
+    align-items: center;
   }
 
   .side-nav::-webkit-scrollbar {
-    height: 6px;
+    height: 0;
+    width: 0;
   }
 
   .nav-item {
     white-space: nowrap;
     flex: 0 0 auto;
-    padding: 5px 8px;
-    font-size: 12px;
+    padding: 4px 7px;
+    font-size: 11px;
     line-height: 1.1;
-    border-radius: 8px;
+    border-radius: 7px;
   }
 
   .workspace {
@@ -521,6 +532,16 @@ dialog pre {
 }
 
 @media (max-width: 560px) {
+  .sidebar {
+    grid-template-columns: auto 1fr;
+    gap: 6px;
+  }
+
+  .brand-name {
+    max-width: 72px;
+    font-size: 10px;
+  }
+
   .scope-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;
