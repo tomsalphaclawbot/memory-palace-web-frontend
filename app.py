@@ -362,7 +362,7 @@ def create_app() -> Flask:
                 database=neo4_settings["database"],
                 max_nodes=max_nodes,
                 max_edges=max_edges,
-                query=query,
+                text_query=query,
             )
         except RuntimeError as err:
             return jsonify({"error": str(err)}), 503
@@ -561,17 +561,17 @@ def query_neo4_graph(
     database: str,
     max_nodes: int,
     max_edges: int,
-    query: str,
+    text_query: str,
 ) -> dict[str, Any]:
     if GraphDatabase is None:
         raise RuntimeError("Neo4j driver missing. Install Python package: neo4j")
 
     cypher = """
         MATCH (n)
-        WHERE $query = ''
+        WHERE $text_query = ''
           OR any(k IN ['name','label','title','wing','room','embedding_id','source_file']
-                 WHERE toLower(toString(coalesce(n[k], ''))) CONTAINS $query)
-          OR any(lbl IN labels(n) WHERE toLower(lbl) CONTAINS $query)
+                 WHERE toLower(toString(coalesce(n[k], ''))) CONTAINS $text_query)
+          OR any(lbl IN labels(n) WHERE toLower(lbl) CONTAINS $text_query)
         WITH n
         LIMIT $max_nodes
         OPTIONAL MATCH (n)-[r]->(m)
@@ -643,7 +643,7 @@ def query_neo4_graph(
 
     try:
         with driver.session(database=database) as session:
-            records = session.run(cypher, max_nodes=max_nodes, max_edges=max_edges, query=query)
+            records = session.run(cypher, max_nodes=max_nodes, max_edges=max_edges, text_query=text_query)
             for record in records:
                 n = record.get("n")
                 r = record.get("r")
@@ -709,7 +709,7 @@ def query_neo4_graph(
             "database": database,
             "node_count": len(sorted_nodes),
             "edge_count": len(edges),
-            "query": query,
+            "query": text_query,
         },
     }
 
