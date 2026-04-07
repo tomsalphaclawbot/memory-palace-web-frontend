@@ -11,6 +11,8 @@ const state = {
   snippets: { limit: 24, offset: 0, total: 0 },
 };
 
+let graphViewReady = false;
+
 const el = {
   summary: document.getElementById('summary'),
   activeWing: document.getElementById('activeWing'),
@@ -42,8 +44,12 @@ const el = {
   snippetsPrev: document.getElementById('snippetsPrev'),
   snippetsNext: document.getElementById('snippetsNext'),
 
-  graphSvg: document.getElementById('graphSvg'),
-  graphMeta: document.getElementById('graphMeta'),
+  graphSearchInput: document.getElementById('graphSearchInput'),
+  graphSearchBtn: document.getElementById('graphSearchBtn'),
+  graphClearSearchBtn: document.getElementById('graphClearSearchBtn'),
+  graphResetViewBtn: document.getElementById('graphResetViewBtn'),
+  graphStatus: document.getElementById('graphStatus'),
+  graphLegend: document.getElementById('graphLegend'),
   graphRefreshBtn: document.getElementById('graphRefreshBtn'),
 
   drawerDialog: document.getElementById('drawerDialog'),
@@ -392,120 +398,29 @@ async function refreshBrowserData() {
   updateFilterUI();
 }
 
-function lineWeightClass(weight) {
-  if (weight >= 30) return 'edge-strong';
-  if (weight >= 10) return 'edge-med';
-  return 'edge-light';
-}
+function ensureGraphViewReady() {
+  if (graphViewReady) return;
+  if (!window.GraphView || typeof window.GraphView.init !== 'function') {
+    throw new Error('Graph renderer failed to initialize');
+  }
 
-function truncateLabel(text, max = 26) {
-  if (!text) return '';
-  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
-}
-
-function renderGraph(graph) {
-  const svg = el.graphSvg;
-  const width = 1200;
-
-  const wings = graph.nodes.filter((n) => n.type === 'wing');
-  const rooms = graph.nodes.filter((n) => n.type === 'room');
-  const edges = graph.edges;
-
-  const rows = Math.max(wings.length, rooms.length, 1);
-  const height = Math.max(640, rows * 44 + 80);
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-
-  const wingX = 260;
-  const roomX = width - 260;
-
-  const wingYStep = (height - 80) / Math.max(wings.length, 1);
-  const roomYStep = (height - 80) / Math.max(rooms.length, 1);
-
-  const nodePositions = new Map();
-
-  wings.forEach((wing, i) => {
-    nodePositions.set(wing.id, {
-      x: wingX,
-      y: 40 + wingYStep * i + wingYStep / 2,
-      ...wing,
-    });
+  window.GraphView.init({
+    wrapId: 'graphWrap',
+    searchId: 'graphSearchInput',
+    clearSearchId: 'graphClearSearchBtn',
+    statusId: 'graphStatus',
+    legendId: 'graphLegend',
+    resetViewId: 'graphResetViewBtn',
+    engineTabSelector: '.graph-engine-tab',
   });
 
-  rooms.forEach((room, i) => {
-    nodePositions.set(room.id, {
-      x: roomX,
-      y: 40 + roomYStep * i + roomYStep / 2,
-      ...room,
-    });
-  });
-
-  const lines = edges
-    .map((edge) => {
-      const source = nodePositions.get(edge.source);
-      const target = nodePositions.get(edge.target);
-      if (!source || !target) return '';
-      return `<line class="graph-edge ${lineWeightClass(edge.weight)}" x1="${source.x}" y1="${source.y}" x2="${target.x}" y2="${target.y}" />`;
-    })
-    .join('');
-
-  const nodes = Array.from(nodePositions.values())
-    .map((node) => {
-      const cls = node.type === 'wing' ? 'graph-wing' : 'graph-room';
-      const textAnchor = node.type === 'wing' ? 'end' : 'start';
-      const textX = node.type === 'wing' ? node.x - 18 : node.x + 18;
-      const radius = node.type === 'wing' ? 9 : 7;
-      const dataAttrs = `data-node-type="${node.type}" data-node-label="${escapeHtml(node.label)}"`;
-      return `
-        <g class="graph-node ${cls}" ${dataAttrs}>
-          <circle cx="${node.x}" cy="${node.y}" r="${radius}" />
-          <text x="${textX}" y="${node.y + 4}" text-anchor="${textAnchor}">${escapeHtml(truncateLabel(node.label))}</text>
-        </g>
-      `;
-    })
-    .join('');
-
-  svg.innerHTML = `<g>${lines}${nodes}</g>`;
-  el.graphMeta.textContent = `${wings.length} wings • ${rooms.length} rooms • ${edges.length} links`;
-
-  svg.querySelectorAll('.graph-node').forEach((nodeEl) => {
-    nodeEl.addEventListener('click', async () => {
-      const type = nodeEl.getAttribute('data-node-type');
-      const label = nodeEl.getAttribute('data-node-label') || '';
-
-      try {
-        if (type === 'wing') {
-          state.wing = label;
-          state.room = '';
-          state.rooms.offset = 0;
-        } else if (type === 'room') {
-          state.room = label;
-        }
-
-        state.drawers.offset = 0;
-        state.snippets.offset = 0;
-
-        await refreshBrowserData();
-        setActiveView('browser', true);
-        setActiveScope(type === 'wing' ? 'rooms' : 'drawers');
-      } catch (err) {
-        renderError(err.message || String(err));
-      }
-    });
-  });
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#39;');
+  graphViewReady = true;
 }
 
 async function loadGraph() {
-  const graph = await getJson(apiUrl('/api/graph', { max_edges: 500 }));
-  renderGraph(graph);
+  ensureGraphViewReady();
+  const graph = await getJson(apiUrl('/api/graph', { max_edges: 600 }));
+  window.GraphView.load(graph);
 }
 
 el.viewTabs.forEach((tab) => {
@@ -598,6 +513,17 @@ el.snippetsPrev.onclick = async () => {
 el.snippetsNext.onclick = async () => {
   state.snippets.offset += state.snippets.limit;
   await loadSnippets().catch((err) => renderError(err.message || String(err)));
+};
+
+el.graphSearchBtn.onclick = () => {
+  try {
+    ensureGraphViewReady();
+    if (window.GraphView && typeof window.GraphView.applyFilter === 'function') {
+      window.GraphView.applyFilter();
+    }
+  } catch (err) {
+    renderError(err.message || String(err));
+  }
 };
 
 el.graphRefreshBtn.onclick = () => loadGraph().catch((err) => renderError(err.message || String(err)));

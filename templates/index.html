@@ -102,13 +102,30 @@
           <article class="panel-card">
             <div class="panel-head">
               <h2>Graph View</h2>
+            </div>
+            <p class="muted">Interactive memory graph, click nodes to expand clusters, hover to explore local neighborhoods.</p>
+
+            <div class="graph-toolbar">
+              <input id="graphSearchInput" type="text" placeholder="Filter concepts, rooms, wings, drawers..." />
+              <button id="graphSearchBtn">Filter</button>
+              <button id="graphClearSearchBtn" class="ghost">Clear</button>
+              <button id="graphResetViewBtn" class="ghost">Reset View</button>
               <button id="graphRefreshBtn" class="ghost">Refresh Graph</button>
             </div>
-            <p class="muted">Wing to Room connectivity from the current palace.</p>
-            <div class="graph-wrap">
-              <svg id="graphSvg" viewBox="0 0 1200 720" preserveAspectRatio="xMidYMid meet"></svg>
+
+            <div class="graph-engine-tabs" role="tablist" aria-label="Graph renderer options">
+              <button class="graph-engine-tab active" data-graph-engine="sigma">Sigma.js</button>
+              <button class="graph-engine-tab" data-graph-engine="cytoscape">Cytoscape.js</button>
+              <button class="graph-engine-tab" data-graph-engine="g6">AntV G6</button>
             </div>
-            <div class="panel-meta" id="graphMeta"></div>
+
+            <div class="graph-wrap" id="graphWrap">
+              <div id="graphSigma" class="graph-engine-panel active"></div>
+              <div id="graphCytoscape" class="graph-engine-panel"></div>
+              <div id="graphG6" class="graph-engine-panel"></div>
+            </div>
+            <div class="panel-meta" id="graphLegend"></div>
+            <div class="panel-meta" id="graphStatus"></div>
           </article>
         </section>
 
@@ -129,6 +146,11 @@
       </article>
     </dialog>
 
+    <script src="https://unpkg.com/graphology@0.25.4/dist/graphology.umd.min.js"></script>
+    <script src="https://unpkg.com/sigma@2.4.0/build/sigma.min.js"></script>
+    <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/@antv/g6@4.8.25/dist/g6.min.js"></script>
+    <script src="{{ url_for('static', filename='graph-view.js') }}?v={{ asset_version }}"></script>
     <script src="{{ url_for('static', filename='app.js') }}?v={{ asset_version }}"></script>
   </body>
 </html>
