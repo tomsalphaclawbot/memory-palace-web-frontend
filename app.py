@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 import sqlite3
 from pathlib import Path
@@ -7,18 +8,19 @@ from typing import Any
 from flask import Flask, jsonify, render_template, request
 from werkzeug.exceptions import BadRequest
 
+BASE_DIR = Path(__file__).resolve().parent
+DEFAULT_CONFIG_PATH = BASE_DIR / "config" / "palace.json"
+
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-2")
+    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-3")
+    palace_root = load_palace_path_from_config()
+    db_path = resolve_db_path(palace_root)
 
     @app.get("/")
     def index():
         return render_template("index.html", asset_version=asset_version)
-
-    @app.get("/settings")
-    def settings_page():
-        return render_template("settings.html", asset_version=asset_version)
 
     @app.get("/healthz")
     def healthz():
@@ -30,13 +32,8 @@ def create_app() -> Flask:
             return jsonify({"error": err.description}), 400
         return err
 
-    @app.get("/api/config")
-    def config():
-        return jsonify({"defaultPalace": os.getenv("MEMORY_PALACE_PATH", "")})
-
     @app.get("/api/summary")
     def summary():
-        db_path = resolve_db_path(request.args.get("palace") or os.getenv("MEMORY_PALACE_PATH", ""))
         with connect_readonly(db_path) as conn:
             rows = conn.execute(
                 """
@@ -49,7 +46,6 @@ def create_app() -> Flask:
             ).fetchone()
         return jsonify(
             {
-                "dbPath": str(db_path),
                 "totalDrawers": rows["total_drawers"],
                 "wings": rows["wings"],
                 "rooms": rows["rooms"],
@@ -58,7 +54,6 @@ def create_app() -> Flask:
 
     @app.get("/api/wings")
     def wings():
-        db_path = resolve_db_path(request.args.get("palace") or os.getenv("MEMORY_PALACE_PATH", ""))
         with connect_readonly(db_path) as conn:
             rows = conn.execute(
                 """
@@ -73,7 +68,6 @@ def create_app() -> Flask:
 
     @app.get("/api/rooms")
     def rooms():
-        db_path = resolve_db_path(request.args.get("palace") or os.getenv("MEMORY_PALACE_PATH", ""))
         wing = (request.args.get("wing") or "").strip()
 
         sql = """
@@ -101,7 +95,6 @@ def create_app() -> Flask:
 
     @app.get("/api/drawers")
     def drawers():
-        db_path = resolve_db_path(request.args.get("palace") or os.getenv("MEMORY_PALACE_PATH", ""))
         wing = (request.args.get("wing") or "").strip()
         room = (request.args.get("room") or "").strip()
         query = (request.args.get("q") or "").strip()
@@ -182,8 +175,6 @@ def create_app() -> Flask:
 
     @app.get("/api/drawer/<embedding_id>")
     def drawer(embedding_id: str):
-        db_path = resolve_db_path(request.args.get("palace") or os.getenv("MEMORY_PALACE_PATH", ""))
-
         sql = """
             WITH meta AS (
               SELECT
@@ -219,10 +210,25 @@ def connect_readonly(db_path: Path) -> sqlite3.Connection:
     return conn
 
 
-def resolve_db_path(palace_path: str) -> Path:
-    if not palace_path:
-        raise_bad_request("Missing palace path. Set MEMORY_PALACE_PATH or pass ?palace=/path")
+def load_palace_path_from_config() -> str:
+    config_path = Path(os.getenv("APP_CONFIG_FILE", str(DEFAULT_CONFIG_PATH))).expanduser()
 
+    if not config_path.exists() or not config_path.is_file():
+        raise RuntimeError(f"Config file not found: {config_path}")
+
+    try:
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as err:
+        raise RuntimeError(f"Invalid JSON in config file: {config_path}: {err}") from err
+
+    palace_path = str(config.get("palace_path", "")).strip()
+    if not palace_path:
+        raise RuntimeError(f"Missing 'palace_path' in config file: {config_path}")
+
+    return palace_path
+
+
+def resolve_db_path(palace_path: str) -> Path:
     candidate = Path(palace_path).expanduser()
 
     possible = []
@@ -241,8 +247,9 @@ def resolve_db_path(palace_path: str) -> Path:
         if path.exists() and path.is_file():
             return path.resolve()
 
-    raise_bad_request(
-        "Could not find chroma.sqlite3. Try a palace root or sqlite file path directly."
+    raise RuntimeError(
+        f"Could not find chroma.sqlite3 from configured palace_path: {palace_path}. "
+        "Set a valid palace path in config/palace.json or APP_CONFIG_FILE."
     )
 
 

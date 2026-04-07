@@ -13,64 +13,51 @@ A lightweight, read-only web UI and JSON API for browsing a MemPalace SQLite sto
 
 ## Quick start guide
 
-### Option A: Local run
+### 1) Configure palace path (hardcoded config file)
 
-1. Copy env template:
+Edit `config/palace.json`:
+
+```json
+{
+  "palace_path": "./palace"
+}
+```
+
+Set this to a palace directory or a direct `chroma.sqlite3` path.
+
+### 2) Run locally
 
 ```bash
 cp .env.example .env
-```
-
-2. Set `MEMORY_PALACE_PATH` in `.env` (palace dir or `chroma.sqlite3` file).
-3. Install dependencies:
-
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-4. Start app:
-
-```bash
 ./scripts/run.sh
 ```
 
-5. Open <http://127.0.0.1:8099>
+Open <http://127.0.0.1:8099>
 
-### Option B: Docker run
-
-1. Copy env template:
+### 3) Run with Docker
 
 ```bash
 cp .env.example .env
-```
-
-2. (Optional) set `PALACE_PATH` in `.env` (defaults to `./palace`).
-3. Start:
-
-```bash
 ./scripts/docker-up.sh
 ```
 
-4. Open <http://127.0.0.1:8099>
+Open <http://127.0.0.1:8099>
 
 ## Features
 
 - Read-only API over `chroma.sqlite3`
-- Top tabs for Browser, 3D View, Graph View, and Settings
+- Top tabs for Browser, 3D View, Graph View
 - Wing and room navigation
 - Drawer search and pagination
 - Drawer detail view
-- Dedicated `/settings` page for session-only palace path validation/launch
-- Works with a direct SQLite file path or palace root path
+- Config-file-driven palace target (`config/palace.json`)
 - Optional Cloudflare Tunnel sidecar for Access-gated publishing
 
 ## API
 
-All endpoints support optional `?palace=/path/to/palace-or-sqlite`.
-
-- `GET /api/config`
 - `GET /api/summary`
 - `GET /api/wings`
 - `GET /api/rooms?wing=<name>`
@@ -82,12 +69,13 @@ All endpoints support optional `?palace=/path/to/palace-or-sqlite`.
 
 ```bash
 cp .env.example .env
-# optionally set PALACE_PATH (defaults to ./palace)
+# optionally set PALACE_PATH in .env (defaults to ./palace)
 ./scripts/docker-up.sh
 ```
 
 - App runs on `http://127.0.0.1:${PORT:-8099}` (bound to `${BIND_HOST:-127.0.0.1}`)
-- The container mounts only `PALACE_PATH` as read-only at `/palace`
+- Container mounts only `PALACE_PATH` as read-only at `/app/palace`
+- App reads config from `/app/config/palace.json`
 
 ### Optional Cloudflare Tunnel
 

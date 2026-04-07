@@ -7,6 +7,11 @@ and this project currently tracks changes on `main` until a first tagged release
 
 ## [Unreleased]
 
+### Changed
+- Removed runtime palace-path controls from UI (including `/settings`) and switched to config-file-only targeting.
+- Summary UI/API no longer expose SQLite file path.
+- Added `config/palace.json` as the canonical palace source.
+
 ## [0.1.0] - 2026-04-07
 
 ### Added

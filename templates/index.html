@@ -18,7 +18,6 @@
           <button class="nav-item active" data-view="browser">Browser</button>
           <button class="nav-item" data-view="graph">Graph</button>
           <button class="nav-item" data-view="view3d">3D</button>
-          <a class="nav-item link-nav" href="/settings">Settings</a>
         </nav>
 
         <div class="sidebar-dot" aria-hidden="true"></div>
@@ -38,19 +37,11 @@
               <input id="searchInput" type="text" placeholder="Search memories..." />
               <button id="searchBtn">Search</button>
               <button id="clearBtn" class="ghost">Clear</button>
+              <button id="refresh" class="ghost">Refresh</button>
             </div>
           </header>
 
           <section class="summary-strip" id="summary"></section>
-
-          <section class="path-controls">
-            <label>
-              Palace path
-              <input id="palaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
-            </label>
-            <button id="applyPalace">Apply</button>
-            <button id="refresh" class="ghost">Refresh</button>
-          </section>
 
           <section class="browser-layout">
             <div class="column-left">

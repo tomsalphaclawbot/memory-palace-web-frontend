@@ -8,7 +8,7 @@ Thanks for helping improve Memory Palace Web Frontend.
 git clone https://github.com/tomsalphaclawbot/memory-palace-web-frontend.git
 cd memory-palace-web-frontend
 cp .env.example .env
-# set MEMORY_PALACE_PATH to a real local path
+# set palace_path in config/palace.json to a real local path
 ./scripts/run.sh
 ```
 

@@ -1,5 +1,4 @@
 const state = {
-  palace: '',
   wing: '',
   room: '',
   q: '',
@@ -9,8 +8,6 @@ const state = {
 };
 
 const el = {
-  palaceInput: document.getElementById('palaceInput'),
-  applyPalace: document.getElementById('applyPalace'),
   refresh: document.getElementById('refresh'),
   searchInput: document.getElementById('searchInput'),
   searchBtn: document.getElementById('searchBtn'),
@@ -59,9 +56,6 @@ function setActiveView(view, updateHash = false) {
 
 function apiUrl(path, params = {}) {
   const url = new URL(path, window.location.origin);
-  if (state.palace) {
-    url.searchParams.set('palace', state.palace);
-  }
   Object.entries(params).forEach(([k, v]) => {
     if (v !== '' && v !== null && v !== undefined) {
       url.searchParams.set(k, String(v));
@@ -88,18 +82,9 @@ function renderError(message) {
   el.drawerMeta.textContent = '';
 }
 
-async function loadConfig() {
-  const config = await getJson('/api/config');
-  const qsPalace = new URLSearchParams(window.location.search).get('palace') || '';
-  state.palace = qsPalace || config.defaultPalace || '';
-  if (el.palaceInput) {
-    el.palaceInput.value = state.palace;
-  }
-}
-
 async function loadSummary() {
   const summary = await getJson(apiUrl('/api/summary'));
-  el.summary.textContent = `DB: ${summary.dbPath} • ${summary.wings} wings • ${summary.rooms} rooms • ${summary.totalDrawers} drawers`;
+  el.summary.textContent = `${summary.wings} wings • ${summary.rooms} rooms • ${summary.totalDrawers} drawers`;
 }
 
 function makeFilterButton(label, onClick, active = false) {
@@ -270,18 +255,6 @@ async function refreshAll() {
   }
 }
 
-if (el.applyPalace) {
-  el.applyPalace.onclick = () => {
-    state.palace = el.palaceInput.value.trim();
-    state.offset = 0;
-    state.wing = '';
-    state.room = '';
-    state.q = '';
-    el.searchInput.value = '';
-    refreshAll();
-  };
-}
-
 if (el.refresh) {
   el.refresh.onclick = () => refreshAll();
 }
@@ -342,7 +315,6 @@ window.addEventListener('hashchange', () => {
 (async function init() {
   try {
     setActiveView(normalizeViewFromHash());
-    await loadConfig();
     await refreshAll();
   } catch (err) {
     renderError(err.message || String(err));

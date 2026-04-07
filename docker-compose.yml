@@ -4,11 +4,11 @@ services:
     container_name: memory-palace-web-frontend
     restart: unless-stopped
     environment:
-      MEMORY_PALACE_PATH: /palace
+      APP_CONFIG_FILE: /app/config/palace.json
       HOST: 0.0.0.0
       PORT: 8099
     volumes:
-      - ${PALACE_PATH:-./palace}:/palace:ro
+      - ${PALACE_PATH:-./palace}:/app/palace:ro
     ports:
       - "${BIND_HOST:-127.0.0.1}:${PORT:-8099}:8099"
     healthcheck:

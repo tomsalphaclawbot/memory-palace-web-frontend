@@ -16,6 +16,7 @@ Project-level instructions for AI/code agents working in this repository.
 - Local + Docker workflows are first-class.
 - Optional Cloudflare tunnel support may exist, but must remain optional.
 - Keep setup simple for self-hosters.
+- Palace target is config-file-driven (`config/palace.json`), not runtime UI input.
 
 ## Files to keep aligned when behavior changes
 - `README.md`
@@ -44,7 +45,7 @@ Project-level instructions for AI/code agents working in this repository.
 ## Coding style
 - Prefer small, targeted diffs.
 - Keep error messages actionable.
-- Preserve backwards compatibility for existing query params when possible.
+- Preserve backwards compatibility unless product direction explicitly removes a path.
 
 ## Commit style
 - Use concise imperative commit messages.
