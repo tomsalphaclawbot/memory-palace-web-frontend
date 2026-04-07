@@ -2,10 +2,11 @@
 
 ## P0 (next)
 - [ ] Build a multi-view frontend shell with a mode switcher:
-  - [ ] List (current)
-  - [ ] 3D Palace
-  - [ ] Knowledge Graph
+  - [x] List (current)
+  - [x] 3D Palace (tab scaffold)
+  - [x] Knowledge Graph (tab scaffold)
   - [ ] Timeline
+- [x] Add dedicated settings page (`/settings`) for path validation + launch into browser.
 - [ ] Research + choose 3D stack (Three.js/R3F vs `react-force-graph-3d`).
 - [ ] Research + choose graph stack (Cytoscape.js vs Sigma.js vs AntV G6).
 - [ ] Implement 3D Palace v0 prototype.
