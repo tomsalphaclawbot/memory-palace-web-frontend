@@ -337,15 +337,20 @@ li button.active-filter {
 
 .graph-engine-tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
   gap: 8px;
   margin-bottom: 8px;
+  padding-bottom: 2px;
 }
 
 .graph-engine-tab {
   background: #f0f3ff;
   color: #2c3553;
   border: 1px solid #d8e1ff;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .graph-engine-tab.active {
@@ -368,6 +373,10 @@ li button.active-filter {
   height: min(68vh, 760px);
   display: none;
   touch-action: none;
+}
+
+#graphD3 {
+  background: #0f1220;
 }
 
 .graph-engine-panel.active {

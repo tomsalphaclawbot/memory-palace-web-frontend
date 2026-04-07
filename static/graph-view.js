@@ -1,4 +1,4 @@
-/* graph-view.js — Multi-renderer graph explorer (Sigma.js, Cytoscape.js, AntV G6) */
+/* graph-view.js — Multi-renderer graph explorer (Sigma.js, Cytoscape.js, AntV G6 + Vis, D3, ForceGraph) */
 (function () {
   'use strict';
 
@@ -34,6 +34,9 @@
       sigma: null,
       cytoscape: null,
       g6: null,
+      vis: null,
+      d3: null,
+      force: null,
     },
   };
 
@@ -41,6 +44,9 @@
     sigma: createSigmaEngine(),
     cytoscape: createCytoscapeEngine(),
     g6: createG6Engine(),
+    vis: createVisEngine(),
+    d3: createD3Engine(),
+    force: createForceGraphEngine(),
   };
 
   window.GraphView = {
@@ -64,6 +70,9 @@
     ui.panels.sigma = document.getElementById('graphSigma');
     ui.panels.cytoscape = document.getElementById('graphCytoscape');
     ui.panels.g6 = document.getElementById('graphG6');
+    ui.panels.vis = document.getElementById('graphVis');
+    ui.panels.d3 = document.getElementById('graphD3');
+    ui.panels.force = document.getElementById('graphForce');
 
     if (!ui.wrap) throw new Error('Graph wrapper missing');
 
@@ -95,7 +104,7 @@
 
     if (ui.legend) {
       ui.legend.textContent =
-        'Renderers: Sigma.js, Cytoscape.js, AntV G6. Click room to expand/collapse drawers. Click wing to focus neighborhood. Hover highlights local links.';
+        'Renderers: Sigma.js, Cytoscape.js, AntV G6, vis-network, D3 Force, ForceGraph. Click room to expand/collapse drawers. Click wing to focus neighborhood. Hover highlights local links.';
     }
 
     setEngine(state.engine);
@@ -652,6 +661,411 @@
       },
     };
   }
+
+  function createVisEngine() {
+    return {
+      label: 'vis-network',
+      network: null,
+      nodesData: null,
+      edgesData: null,
+      graphData: null,
+      ctx: null,
+      hoveredNodeId: null,
+      render(graphData, ctx) {
+        const panel = ui.panels.vis;
+        if (!panel) return;
+
+        const visGlobal = window.vis && (window.vis.default || window.vis);
+        if (!visGlobal || typeof visGlobal.Network !== 'function') {
+          setStatus('vis-network unavailable, check CDN load.');
+          return;
+        }
+
+        this.destroy();
+        this.graphData = graphData;
+        this.ctx = ctx;
+
+        this.nodesData = new visGlobal.DataSet(
+          graphData.nodes.map((node) => ({
+            id: node.id,
+            label: node.label,
+            shape: 'dot',
+            size: nodeSize(node),
+            color: nodeColor(node),
+            font: { color: '#e7f0ff', size: 11, face: 'Inter, system-ui' },
+            raw: node,
+          }))
+        );
+
+        this.edgesData = new visGlobal.DataSet(
+          graphData.edges.map((edge, index) => ({
+            id: `e-${index}-${edge.source}-${edge.target}`,
+            from: edge.source,
+            to: edge.target,
+            width: Math.max(1, Math.min(4, (edge.weight || 1) / 6)),
+            color: { color: COLORS.edge },
+            smooth: { enabled: false },
+          }))
+        );
+
+        this.network = new visGlobal.Network(
+          panel,
+          { nodes: this.nodesData, edges: this.edgesData },
+          {
+            autoResize: true,
+            interaction: { hover: true, dragNodes: true, dragView: true, zoomView: true },
+            physics: {
+              enabled: true,
+              solver: 'forceAtlas2Based',
+              stabilization: { enabled: true, iterations: 120 },
+              forceAtlas2Based: { gravitationalConstant: -60, springLength: 120, springConstant: 0.06 },
+            },
+            edges: { color: { color: COLORS.edge, highlight: '#b7cbff' } },
+          }
+        );
+
+        this.network.on('click', (params) => {
+          const id = params && params.nodes && params.nodes[0];
+          if (!id || !this.nodesData) return;
+          const node = this.nodesData.get(id);
+          if (node && node.raw) ctx.onNodeClick(node.raw);
+        });
+
+        this.network.on('hoverNode', (params) => {
+          this.hoveredNodeId = params.node;
+          this.applyFocus();
+          const node = this.nodesData && this.nodesData.get(params.node);
+          if (node && node.label) ctx.setStatus(`vis-network hover: ${node.label}`);
+        });
+
+        this.network.on('blurNode', () => {
+          this.hoveredNodeId = null;
+          this.applyFocus();
+        });
+
+        this.applyFocus();
+      },
+      applyFocus() {
+        if (!this.nodesData || !this.edgesData || !this.ctx || !this.graphData) return;
+
+        const focusId = this.hoveredNodeId || this.ctx.focusNodeId;
+        const highlightSet = focusId ? this.ctx.getNeighborhood(focusId) : null;
+
+        this.nodesData.update(
+          this.graphData.nodes.map((node) => {
+            const inFocus = !highlightSet || highlightSet.has(node.id);
+            return {
+              id: node.id,
+              color: inFocus ? nodeColor(node) : COLORS.dim,
+              font: { color: inFocus ? '#e7f0ff' : '#6f7890', size: 11, face: 'Inter, system-ui' },
+              borderWidth: this.ctx.focusNodeId === node.id ? 2 : 0,
+              borderWidthSelected: this.ctx.focusNodeId === node.id ? 2 : 0,
+              borderWidthHovered: 1,
+            };
+          })
+        );
+
+        this.edgesData.update(
+          this.graphData.edges.map((edge, index) => {
+            const linked = !highlightSet || highlightSet.has(edge.source) || highlightSet.has(edge.target);
+            return {
+              id: `e-${index}-${edge.source}-${edge.target}`,
+              color: { color: linked ? COLORS.edge : COLORS.dim },
+              width: linked ? Math.max(1, Math.min(4, (edge.weight || 1) / 6)) : 0.7,
+            };
+          })
+        );
+      },
+      resize() {
+        if (this.network) this.network.redraw();
+      },
+      suspend() {
+        this.hoveredNodeId = null;
+      },
+      resetView() {
+        if (!this.network) return;
+        this.hoveredNodeId = null;
+        this.network.fit({ animation: { duration: 350 } });
+        this.applyFocus();
+      },
+      destroy() {
+        if (this.network && typeof this.network.destroy === 'function') {
+          this.network.destroy();
+        }
+        this.network = null;
+        this.nodesData = null;
+        this.edgesData = null;
+      },
+    };
+  }
+
+  function createD3Engine() {
+    return {
+      label: 'D3 Force',
+      svg: null,
+      simulation: null,
+      graphData: null,
+      ctx: null,
+      hoveredNodeId: null,
+      nodesSel: null,
+      linksSel: null,
+      labelsSel: null,
+      render(graphData, ctx) {
+        const panel = ui.panels.d3;
+        if (!panel || !window.d3) {
+          setStatus('D3 unavailable, check CDN load.');
+          return;
+        }
+
+        this.destroy();
+        this.graphData = graphData;
+        this.ctx = ctx;
+
+        const d3 = window.d3;
+        const width = Math.max(panel.clientWidth || 0, 320);
+        const height = Math.max(panel.clientHeight || 0, 360);
+
+        this.svg = d3.select(panel);
+        this.svg.selectAll('*').remove();
+        this.svg.attr('viewBox', `0 0 ${width} ${height}`).attr('width', width).attr('height', height);
+
+        const root = this.svg.append('g').attr('class', 'd3-root');
+
+        this.svg.call(
+          d3.zoom().scaleExtent([0.2, 6]).on('zoom', (event) => {
+            root.attr('transform', event.transform);
+          })
+        );
+
+        const nodes = graphData.nodes.map((node) => ({ ...node }));
+        const links = graphData.edges.map((edge) => ({ ...edge }));
+
+        this.linksSel = root
+          .append('g')
+          .selectAll('line')
+          .data(links)
+          .enter()
+          .append('line')
+          .attr('stroke', COLORS.edge)
+          .attr('stroke-width', (d) => Math.max(1, Math.min(4, (d.weight || 1) / 6)));
+
+        this.nodesSel = root
+          .append('g')
+          .selectAll('circle')
+          .data(nodes)
+          .enter()
+          .append('circle')
+          .attr('r', (d) => nodeSize(d))
+          .attr('fill', (d) => nodeColor(d))
+          .attr('stroke', '#dce6ff')
+          .attr('stroke-width', 0.8)
+          .style('cursor', 'pointer')
+          .on('click', (_, d) => ctx.onNodeClick(d))
+          .on('mouseover', (_, d) => {
+            this.hoveredNodeId = d.id;
+            this.applyFocus();
+            ctx.setStatus(`D3 hover: ${d.label}`);
+          })
+          .on('mouseout', () => {
+            this.hoveredNodeId = null;
+            this.applyFocus();
+          })
+          .call(
+            d3.drag()
+              .on('start', (event, d) => {
+                if (!event.active) this.simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+              })
+              .on('drag', (event, d) => {
+                d.fx = event.x;
+                d.fy = event.y;
+              })
+              .on('end', (event, d) => {
+                if (!event.active) this.simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+              })
+          );
+
+        this.labelsSel = root
+          .append('g')
+          .selectAll('text')
+          .data(nodes)
+          .enter()
+          .append('text')
+          .attr('font-size', 10)
+          .attr('fill', '#e7f0ff')
+          .attr('pointer-events', 'none')
+          .text((d) => d.label);
+
+        this.simulation = d3
+          .forceSimulation(nodes)
+          .force('link', d3.forceLink(links).id((d) => d.id).distance(120).strength(0.12))
+          .force('charge', d3.forceManyBody().strength(-220))
+          .force('center', d3.forceCenter(width / 2, height / 2))
+          .force('collision', d3.forceCollide().radius((d) => nodeSize(d) + 4));
+
+        this.simulation.on('tick', () => {
+          this.linksSel
+            .attr('x1', (d) => d.source.x)
+            .attr('y1', (d) => d.source.y)
+            .attr('x2', (d) => d.target.x)
+            .attr('y2', (d) => d.target.y);
+
+          this.nodesSel.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
+
+          this.labelsSel.attr('x', (d) => d.x + nodeSize(d) + 2).attr('y', (d) => d.y + 3);
+        });
+
+        this.applyFocus();
+      },
+      applyFocus() {
+        if (!this.nodesSel || !this.linksSel || !this.ctx) return;
+
+        const focusId = this.hoveredNodeId || this.ctx.focusNodeId;
+        const highlightSet = focusId ? this.ctx.getNeighborhood(focusId) : null;
+
+        this.nodesSel
+          .attr('opacity', (d) => (!highlightSet || highlightSet.has(d.id) ? 1 : 0.18))
+          .attr('stroke-width', (d) => (this.ctx.focusNodeId === d.id ? 2.8 : 0.8))
+          .attr('stroke', (d) => (this.ctx.focusNodeId === d.id ? COLORS.focus : '#dce6ff'));
+
+        this.labelsSel.attr('opacity', (d) => (!highlightSet || highlightSet.has(d.id) ? 1 : 0.2));
+
+        this.linksSel.attr('opacity', (d) => {
+          if (!highlightSet) return 0.9;
+          const s = typeof d.source === 'string' ? d.source : d.source.id;
+          const t = typeof d.target === 'string' ? d.target : d.target.id;
+          return highlightSet.has(s) || highlightSet.has(t) ? 0.9 : 0.08;
+        });
+      },
+      resize() {
+        if (!this.simulation) return;
+        const panel = ui.panels.d3;
+        if (!panel || !this.svg) return;
+        const width = Math.max(panel.clientWidth || 0, 320);
+        const height = Math.max(panel.clientHeight || 0, 360);
+        this.svg.attr('viewBox', `0 0 ${width} ${height}`).attr('width', width).attr('height', height);
+        const center = this.simulation.force('center');
+        if (center) center.x(width / 2).y(height / 2);
+        this.simulation.alpha(0.25).restart();
+      },
+      suspend() {
+        this.hoveredNodeId = null;
+      },
+      resetView() {
+        this.hoveredNodeId = null;
+        this.applyFocus();
+        if (this.simulation) this.simulation.alpha(0.35).restart();
+      },
+      destroy() {
+        if (this.simulation) this.simulation.stop();
+        this.simulation = null;
+        if (this.svg) this.svg.selectAll('*').remove();
+        this.svg = null;
+      },
+    };
+  }
+
+  function createForceGraphEngine() {
+    return {
+      label: 'ForceGraph',
+      graph: null,
+      graphData: null,
+      ctx: null,
+      hoveredNodeId: null,
+      render(graphData, ctx) {
+        const panel = ui.panels.force;
+        if (!panel || !window.ForceGraph) {
+          setStatus('ForceGraph unavailable, check CDN load.');
+          return;
+        }
+
+        this.destroy();
+        this.graphData = graphData;
+        this.ctx = ctx;
+
+        panel.innerHTML = '';
+
+        const width = Math.max(panel.clientWidth || 0, 320);
+        const height = Math.max(panel.clientHeight || 0, 360);
+
+        const links = graphData.edges.map((edge) => ({
+          source: edge.source,
+          target: edge.target,
+          weight: edge.weight || 1,
+        }));
+
+        const nodes = graphData.nodes.map((node) => ({ ...node }));
+
+        const graph = window.ForceGraph()(panel)
+          .graphData({ nodes, links })
+          .width(width)
+          .height(height)
+          .backgroundColor('#0f1220')
+          .nodeLabel((node) => node.label)
+          .nodeVal((node) => nodeSize(node) * 1.2)
+          .nodeColor((node) => nodeColor(node))
+          .linkColor(() => COLORS.edge)
+          .linkWidth((link) => Math.max(0.8, Math.min(3.2, link.weight / 7)))
+          .onNodeClick((node) => ctx.onNodeClick(node))
+          .onNodeHover((node) => {
+            this.hoveredNodeId = node ? node.id : null;
+            this.applyFocus();
+            if (node && node.label) ctx.setStatus(`ForceGraph hover: ${node.label}`);
+          });
+
+        this.graph = graph;
+        this.applyFocus();
+      },
+      applyFocus() {
+        if (!this.graph || !this.ctx || !this.graphData) return;
+
+        const focusId = this.hoveredNodeId || this.ctx.focusNodeId;
+        const highlightSet = focusId ? this.ctx.getNeighborhood(focusId) : null;
+
+        this.graph
+          .nodeColor((node) => {
+            if (this.ctx.focusNodeId === node.id) return COLORS.focus;
+            if (!highlightSet || highlightSet.has(node.id)) return nodeColor(node);
+            return COLORS.dim;
+          })
+          .linkColor((link) => {
+            if (!highlightSet) return COLORS.edge;
+            return highlightSet.has(link.source.id || link.source) || highlightSet.has(link.target.id || link.target)
+              ? '#b7cbff'
+              : COLORS.dim;
+          })
+          .linkWidth((link) => {
+            const base = Math.max(0.8, Math.min(3.2, (link.weight || 1) / 7));
+            if (!highlightSet) return base;
+            const linked = highlightSet.has(link.source.id || link.source) || highlightSet.has(link.target.id || link.target);
+            return linked ? base : 0.45;
+          });
+      },
+      resize() {
+        if (!this.graph) return;
+        const panel = ui.panels.force;
+        if (!panel) return;
+        this.graph.width(Math.max(panel.clientWidth || 0, 320)).height(Math.max(panel.clientHeight || 0, 360));
+      },
+      suspend() {
+        this.hoveredNodeId = null;
+      },
+      resetView() {
+        this.hoveredNodeId = null;
+        this.applyFocus();
+      },
+      destroy() {
+        if (!this.graph) return;
+        const panel = ui.panels.force;
+        if (panel) panel.innerHTML = '';
+        this.graph = null;
+      },
+    };
+  }
+
 
   function createG6Engine() {
     return {
