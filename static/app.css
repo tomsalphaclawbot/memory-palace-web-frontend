@@ -55,8 +55,14 @@ p {
   font-size: 18px;
 }
 
-.brand-mark {
-  color: #c8d7ff;
+.brand-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.brand-name {
+  line-height: 1;
 }
 
 .side-nav {
@@ -441,7 +447,7 @@ dialog pre {
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: 1fr;
   }
@@ -449,27 +455,39 @@ dialog pre {
   .sidebar {
     border-right: none;
     border-bottom: 1px solid var(--sidebar-border);
-    display: grid;
-    grid-template-columns: auto 1fr;
+    display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 10px;
-    padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
+    gap: 8px;
+    padding: calc(6px + env(safe-area-inset-top)) 8px 6px;
     position: sticky;
     top: 0;
     z-index: 30;
   }
 
   .brand {
-    font-size: 15px;
+    font-size: 13px;
+    flex: 0 0 auto;
+  }
+
+  .brand-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .brand-name {
+    display: none;
   }
 
   .side-nav {
     flex-direction: row;
     flex-wrap: nowrap;
     overflow-x: auto;
-    gap: 8px;
+    gap: 6px;
     padding-bottom: 0;
     justify-content: flex-start;
+    min-width: 0;
+    width: 100%;
   }
 
   .side-nav::-webkit-scrollbar {
@@ -479,12 +497,14 @@ dialog pre {
   .nav-item {
     white-space: nowrap;
     flex: 0 0 auto;
-    padding: 7px 10px;
-    font-size: 13px;
+    padding: 5px 8px;
+    font-size: 12px;
+    line-height: 1.1;
+    border-radius: 8px;
   }
 
   .workspace {
-    padding: 12px;
+    padding: 10px;
   }
 
   .searchbar {
@@ -501,10 +521,6 @@ dialog pre {
 }
 
 @media (max-width: 560px) {
-  .brand span:last-child {
-    display: none;
-  }
-
   .scope-tabs {
     flex-wrap: nowrap;
     overflow-x: auto;

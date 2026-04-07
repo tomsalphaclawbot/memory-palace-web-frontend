@@ -450,6 +450,7 @@ def asset_paths() -> tuple[Path, ...]:
         BASE_DIR / "static" / "app.css",
         BASE_DIR / "static" / "app.js",
         BASE_DIR / "static" / "graph-view.js",
+        BASE_DIR / "static" / "memory-palace-icon.svg",
         BASE_DIR / "templates" / "index.html",
     )
 

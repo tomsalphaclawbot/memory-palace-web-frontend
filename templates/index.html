@@ -4,14 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <title>Memory Palace Browser</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='memory-palace-icon.svg') }}?v={{ asset_version }}" />
     <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}?v={{ asset_version }}" />
   </head>
   <body>
     <div class="app-shell">
       <aside class="sidebar">
         <div class="brand">
-          <span class="brand-mark">▮</span>
-          <span>Memory Palace</span>
+          <img class="brand-icon" src="{{ url_for('static', filename='memory-palace-icon.svg') }}?v={{ asset_version }}" alt="" />
+          <span class="brand-name">Memory Palace</span>
         </div>
 
         <nav class="side-nav" aria-label="View tabs">
