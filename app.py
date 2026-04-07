@@ -9,6 +9,11 @@ from typing import Any
 from flask import Flask, jsonify, render_template, request
 from werkzeug.exceptions import BadRequest
 
+try:
+    from neo4j import GraphDatabase  # type: ignore
+except Exception:  # pragma: no cover - optional dependency for live Neo4j mode
+    GraphDatabase = None
+
 BASE_DIR = Path(__file__).resolve().parent
 DEFAULT_CONFIG_PATH = BASE_DIR / "config" / "palace.json"
 
@@ -19,6 +24,7 @@ def create_app() -> Flask:
     asset_version_override = os.getenv("ASSET_VERSION", "").strip()
     palace_root = load_palace_path_from_config()
     db_path = resolve_db_path(palace_root)
+    neo4_settings = neo4_config_from_env()
 
     @app.get("/")
     def index():
@@ -329,6 +335,79 @@ def create_app() -> Flask:
 
         return jsonify({"nodes": nodes, "edges": edges})
 
+    @app.get("/api/graph_neo4")
+    def graph_data_neo4():
+        max_nodes = min(max(parse_int_arg("max_nodes", 400), 10), 5000)
+        max_edges = min(max(parse_int_arg("max_edges", 1200), 10), 10000)
+        query = (request.args.get("q") or "").strip().lower()
+
+        if not neo4_settings["enabled"]:
+            return (
+                jsonify(
+                    {
+                        "error": (
+                            "Neo4j is not configured. Set NEO4J_ENABLED=true and provide "
+                            "NEO4J_URI, NEO4J_USER, and NEO4J_PASSWORD."
+                        )
+                    }
+                ),
+                503,
+            )
+
+        try:
+            graph = query_neo4_graph(
+                uri=neo4_settings["uri"],
+                user=neo4_settings["user"],
+                password=neo4_settings["password"],
+                database=neo4_settings["database"],
+                max_nodes=max_nodes,
+                max_edges=max_edges,
+                query=query,
+            )
+        except RuntimeError as err:
+            return jsonify({"error": str(err)}), 503
+
+        return jsonify(graph)
+
+    @app.get("/api/graph_neo4_status")
+    def graph_neo4_status():
+        if not neo4_settings["enabled"]:
+            return jsonify(
+                {
+                    "enabled": False,
+                    "connected": False,
+                    "message": "Neo4j disabled or not configured",
+                    "database": neo4_settings["database"],
+                }
+            )
+
+        try:
+            probe_neo4_connection(
+                uri=neo4_settings["uri"],
+                user=neo4_settings["user"],
+                password=neo4_settings["password"],
+                database=neo4_settings["database"],
+            )
+            return jsonify(
+                {
+                    "enabled": True,
+                    "connected": True,
+                    "database": neo4_settings["database"],
+                }
+            )
+        except RuntimeError as err:
+            return (
+                jsonify(
+                    {
+                        "enabled": True,
+                        "connected": False,
+                        "database": neo4_settings["database"],
+                        "message": str(err),
+                    }
+                ),
+                503,
+            )
+
     @app.get("/api/graph_drawers")
     def graph_drawers():
         room = (request.args.get("room") or "").strip()
@@ -428,6 +507,211 @@ def resolve_db_path(palace_path: str) -> Path:
         f"Could not find chroma.sqlite3 from configured palace_path: {palace_path}. "
         "Set a valid palace path in config/palace.json or APP_CONFIG_FILE."
     )
+
+
+def neo4_config_from_env() -> dict[str, Any]:
+    uri = os.getenv("NEO4J_URI", "").strip()
+    user = os.getenv("NEO4J_USER", "").strip()
+    password = os.getenv("NEO4J_PASSWORD", "").strip()
+    database = os.getenv("NEO4J_DATABASE", "neo4j").strip() or "neo4j"
+
+    auto_enabled = bool(uri and user and password)
+    enabled = parse_bool_env("NEO4J_ENABLED", auto_enabled)
+
+    return {
+        "enabled": enabled,
+        "uri": uri,
+        "user": user,
+        "password": password,
+        "database": database,
+    }
+
+
+def parse_bool_env(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    value = raw.strip().lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"0", "false", "no", "off"}:
+        return False
+    return default
+
+
+def probe_neo4_connection(*, uri: str, user: str, password: str, database: str):
+    if GraphDatabase is None:
+        raise RuntimeError("Neo4j driver missing. Install Python package: neo4j")
+
+    driver = GraphDatabase.driver(uri, auth=(user, password))
+    try:
+        with driver.session(database=database) as session:
+            session.run("RETURN 1 AS ok").single()
+    except Exception as err:
+        raise RuntimeError(f"Neo4j connection failed: {err}") from err
+    finally:
+        driver.close()
+
+
+def query_neo4_graph(
+    *,
+    uri: str,
+    user: str,
+    password: str,
+    database: str,
+    max_nodes: int,
+    max_edges: int,
+    query: str,
+) -> dict[str, Any]:
+    if GraphDatabase is None:
+        raise RuntimeError("Neo4j driver missing. Install Python package: neo4j")
+
+    cypher = """
+        MATCH (n)
+        WHERE $query = ''
+          OR any(k IN ['name','label','title','wing','room','embedding_id','source_file']
+                 WHERE toLower(toString(coalesce(n[k], ''))) CONTAINS $query)
+          OR any(lbl IN labels(n) WHERE toLower(lbl) CONTAINS $query)
+        WITH n
+        LIMIT $max_nodes
+        OPTIONAL MATCH (n)-[r]->(m)
+        RETURN n, r, m
+        LIMIT $max_edges
+    """
+
+    driver = GraphDatabase.driver(uri, auth=(user, password))
+
+    nodes: dict[str, dict[str, Any]] = {}
+    edges: dict[str, dict[str, Any]] = {}
+
+    def to_int(value: Any, fallback: int = 1) -> int:
+        if value is None:
+            return fallback
+        try:
+            return int(value)
+        except (ValueError, TypeError):
+            return fallback
+
+    def infer_type(labels: list[str], props: dict[str, Any]) -> str:
+        explicit = str(props.get("type", "")).strip().lower()
+        if explicit in {"wing", "room", "drawer"}:
+            return explicit
+
+        lower_labels = [str(label).lower() for label in labels]
+        for candidate in ("wing", "room", "drawer"):
+            if candidate in lower_labels:
+                return candidate
+
+        if any("wing" in label for label in lower_labels):
+            return "wing"
+        if any("room" in label for label in lower_labels):
+            return "room"
+        if any("drawer" in label for label in lower_labels):
+            return "drawer"
+        return "node"
+
+    def infer_label(node_type: str, props: dict[str, Any], fallback_id: str) -> str:
+        keys = ["label", "name", "title", "wing", "room", "embedding_id", "source_file"]
+        for key in keys:
+            value = props.get(key)
+            if value is not None and str(value).strip() != "":
+                return str(value)
+        return f"{node_type}:{fallback_id}"
+
+    def upsert_node(node_obj) -> str:
+        element_id = str(getattr(node_obj, "element_id", "")) or str(node_obj.id)
+        node_id = f"neo4::{element_id}"
+
+        if node_id in nodes:
+            return node_id
+
+        props = dict(node_obj.items())
+        labels = list(getattr(node_obj, "labels", []))
+        node_type = infer_type(labels, props)
+        node_label = infer_label(node_type, props, element_id)
+        node_count = to_int(props.get("count", props.get("drawer_count", props.get("weight", 1))), 1)
+
+        nodes[node_id] = {
+            "id": node_id,
+            "type": node_type,
+            "label": node_label,
+            "count": node_count,
+            "labels": labels,
+            "neo4_element_id": element_id,
+        }
+        return node_id
+
+    try:
+        with driver.session(database=database) as session:
+            records = session.run(cypher, max_nodes=max_nodes, max_edges=max_edges, query=query)
+            for record in records:
+                n = record.get("n")
+                r = record.get("r")
+                m = record.get("m")
+
+                if n is None:
+                    continue
+
+                source_id = upsert_node(n)
+
+                if m is not None:
+                    target_id = upsert_node(m)
+                else:
+                    target_id = ""
+
+                if r is None or not target_id:
+                    continue
+
+                rel_element_id = str(getattr(r, "element_id", "")) or f"{source_id}->{target_id}:{r.type}"
+                edge_id = f"neo4e::{rel_element_id}"
+                if edge_id in edges:
+                    continue
+
+                props = dict(r.items())
+                weight = to_int(props.get("weight", props.get("count", 1)), 1)
+
+                edge_payload: dict[str, Any] = {
+                    "id": edge_id,
+                    "source": source_id,
+                    "target": target_id,
+                    "weight": weight,
+                    "rel_type": str(getattr(r, "type", "CONNECTED_TO")),
+                }
+
+                src_type = nodes[source_id]["type"]
+                tgt_type = nodes[target_id]["type"]
+                if src_type == "wing" and tgt_type == "room":
+                    edge_payload["wing"] = nodes[source_id]["label"]
+                    edge_payload["room"] = nodes[target_id]["label"]
+                elif src_type == "room" and tgt_type == "drawer":
+                    edge_payload["room"] = nodes[source_id]["label"]
+
+                edges[edge_id] = edge_payload
+    except Exception as err:
+        raise RuntimeError(f"Neo4j query failed: {err}") from err
+    finally:
+        driver.close()
+
+    sorted_nodes = sorted(
+        nodes.values(),
+        key=lambda item: (
+            {"wing": 0, "room": 1, "drawer": 2}.get(item.get("type", "node"), 3),
+            -int(item.get("count", 0)),
+            str(item.get("label", "")),
+        ),
+    )
+
+    return {
+        "nodes": sorted_nodes,
+        "edges": list(edges.values()),
+        "meta": {
+            "source": "neo4j",
+            "database": database,
+            "node_count": len(sorted_nodes),
+            "edge_count": len(edges),
+            "query": query,
+        },
+    }
 
 
 def raise_bad_request(message: str):

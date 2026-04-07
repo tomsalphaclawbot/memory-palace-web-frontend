@@ -8,9 +8,9 @@
   - [ ] Timeline
 - [x] Remove runtime path controls from UI; use config-file path only.
 - [ ] Research + choose 3D stack (Three.js/R3F vs `react-force-graph-3d`).
-- [ ] Research + choose graph stack (Cytoscape.js vs Sigma.js vs AntV G6).
+- [x] Research + choose graph stack (Cytoscape.js vs Sigma.js vs AntV G6).
 - [ ] Implement 3D Palace v0 prototype.
-- [ ] Implement Knowledge Graph v0 prototype.
+- [x] Implement Knowledge Graph v0 prototype.
 - [ ] Add automated API smoke tests for:
   - [ ] `/api/summary`
   - [ ] `/api/wings`

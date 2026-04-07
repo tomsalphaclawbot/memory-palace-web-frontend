@@ -7,6 +7,11 @@ and this project currently tracks changes on `main` until a first tagged release
 
 ## [Unreleased]
 
+### Added
+- Live Neo4j/Bolt graph API endpoints: `/api/graph_neo4` and `/api/graph_neo4_status`.
+- Neo4j graph renderer now loads live data from backend Neo4j queries when selected.
+- Optional Neo4j runtime config (`NEO4J_ENABLED`, `NEO4J_URI`, `NEO4J_USER`, `NEO4J_PASSWORD`, `NEO4J_DATABASE`).
+
 ### Changed
 - Removed runtime palace-path controls from UI (including `/settings`) and switched to config-file-only targeting.
 - Summary UI/API no longer expose SQLite file path.

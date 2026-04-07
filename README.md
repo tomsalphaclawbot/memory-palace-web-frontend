@@ -64,6 +64,7 @@ Open <http://127.0.0.1:8099>
 - Wing and room navigation
 - Drawer search and pagination
 - Drawer detail view
+- Neo4j renderer mode with live Bolt-backed graph queries (optional)
 - Config-file-driven palace target (`config/palace.json`)
 - Optional Cloudflare Tunnel sidecar for Access-gated publishing
 
@@ -74,6 +75,9 @@ Open <http://127.0.0.1:8099>
 - `GET /api/rooms?wing=<name>`
 - `GET /api/drawers?wing=&room=&q=&limit=&offset=`
 - `GET /api/drawer/<embedding_id>`
+- `GET /api/graph`
+- `GET /api/graph_neo4?max_nodes=&max_edges=&q=`
+- `GET /api/graph_neo4_status`
 - `GET /healthz`
 
 ## Docker details
@@ -88,6 +92,14 @@ cp .env.example .env
 - Container mounts `PALACE_PATH` (read-only) at `/app/palace`
 - Container also bind-mounts `app.py`, `config/`, `templates/`, and `static/` for live-reload development
 - App reads config from `/app/config/palace.json`
+
+Optional live Neo4j/Bolt integration (used by the Neo4j graph renderer):
+
+- `NEO4J_ENABLED=true`
+- `NEO4J_URI=bolt://<host>:7687`
+- `NEO4J_USER=<username>`
+- `NEO4J_PASSWORD=<password>`
+- `NEO4J_DATABASE=neo4j`
 
 ### Optional Cloudflare Tunnel
 

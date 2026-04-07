@@ -97,7 +97,7 @@
     }
 
     ui.engineTabs.forEach((tab) => {
-      tab.addEventListener('click', () => setEngine(tab.dataset.graphEngine));
+      tab.addEventListener('click', () => setEngine(tab.dataset.graphEngine, true));
     });
 
     window.addEventListener('resize', () => {
@@ -110,7 +110,7 @@
         'Renderers: Sigma.js, Cytoscape.js, AntV G6, vis-network, D3 Force, ForceGraph, Neo4j. Click room to expand/collapse drawers. Click wing to focus neighborhood. Hover highlights local links.';
     }
 
-    setEngine(state.engine);
+    setEngine(state.engine, false);
     setStatus('Graph ready. Pick a renderer, then click nodes to explore.');
   }
 
@@ -148,7 +148,7 @@
     setStatus('Graph reset.');
   }
 
-  function setEngine(name) {
+  function setEngine(name, notify = true) {
     if (!engines[name]) return;
     state.engine = name;
 
@@ -160,6 +160,14 @@
       if (!panel) return;
       panel.classList.toggle('active', engineName === name);
     });
+
+    if (notify) {
+      window.dispatchEvent(
+        new CustomEvent('graph:engine-change', {
+          detail: { engine: name },
+        })
+      );
+    }
 
     renderActiveEngine();
   }

@@ -12,6 +12,11 @@ const state = {
 };
 
 let graphViewReady = false;
+const graphSourceState = {
+  source: 'default',
+  cacheDefault: null,
+  cacheNeo4: null,
+};
 
 const el = {
   summary: document.getElementById('summary'),
@@ -97,8 +102,14 @@ function setActiveView(view, updateHash = false) {
   }
 
   if (state.view === 'graph') {
-    loadGraph().catch((err) => renderError(err.message || String(err)));
+    const engine = getActiveGraphEngine();
+    loadGraphForEngine(engine).catch((err) => renderError(err.message || String(err)));
   }
+}
+
+function getActiveGraphEngine() {
+  const active = document.querySelector('.graph-engine-tab.active');
+  return (active && active.dataset && active.dataset.graphEngine) || 'sigma';
 }
 
 function setActiveScope(scope) {
@@ -418,9 +429,55 @@ function ensureGraphViewReady() {
 }
 
 async function loadGraph() {
+  return loadGraphForEngine(getActiveGraphEngine(), { force: true });
+}
+
+async function loadGraphDefault(options = {}) {
   ensureGraphViewReady();
+  const force = !!options.force;
+
+  if (!force && graphSourceState.cacheDefault) {
+    window.GraphView.load(graphSourceState.cacheDefault);
+    graphSourceState.source = 'default';
+    return;
+  }
+
   const graph = await getJson(apiUrl('/api/graph', { max_edges: 600 }));
+  graphSourceState.cacheDefault = graph;
+  graphSourceState.source = 'default';
   window.GraphView.load(graph);
+}
+
+async function loadGraphNeo4(options = {}) {
+  ensureGraphViewReady();
+  const force = !!options.force;
+
+  if (!force && graphSourceState.cacheNeo4) {
+    window.GraphView.load(graphSourceState.cacheNeo4);
+    graphSourceState.source = 'neo4';
+    return;
+  }
+
+  try {
+    const graph = await getJson(apiUrl('/api/graph_neo4', { max_nodes: 500, max_edges: 1600 }));
+    graphSourceState.cacheNeo4 = graph;
+    graphSourceState.source = 'neo4';
+    window.GraphView.load(graph);
+  } catch (err) {
+    if (graphSourceState.cacheDefault) {
+      window.GraphView.load(graphSourceState.cacheDefault);
+      graphSourceState.source = 'default';
+    }
+    throw new Error(`Neo4 live query unavailable: ${err.message || String(err)}`);
+  }
+}
+
+async function loadGraphForEngine(engine, options = {}) {
+  if (engine === 'neo4') {
+    return loadGraphNeo4(options);
+  }
+
+  return loadGraphDefault(options);
 }
 
 el.viewTabs.forEach((tab) => {
@@ -526,7 +583,16 @@ el.graphSearchBtn.onclick = () => {
   }
 };
 
-el.graphRefreshBtn.onclick = () => loadGraph().catch((err) => renderError(err.message || String(err)));
+el.graphRefreshBtn.onclick = () => {
+  const engine = getActiveGraphEngine();
+  loadGraphForEngine(engine, { force: true }).catch((err) => renderError(err.message || String(err)));
+};
+
+window.addEventListener('graph:engine-change', (event) => {
+  if (state.view !== 'graph') return;
+  const engine = (event && event.detail && event.detail.engine) || getActiveGraphEngine();
+  loadGraphForEngine(engine).catch((err) => renderError(err.message || String(err)));
+});
 
 el.closeDialog.onclick = () => el.drawerDialog.close();
 
@@ -540,7 +606,7 @@ window.addEventListener('hashchange', () => {
     setActiveScope('wings');
     await refreshBrowserData();
     if (state.view === 'graph') {
-      await loadGraph();
+      await loadGraphForEngine(getActiveGraphEngine());
     }
   } catch (err) {
     renderError(err.message || String(err));

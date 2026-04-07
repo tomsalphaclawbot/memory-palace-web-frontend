@@ -8,6 +8,11 @@ services:
       HOST: 0.0.0.0
       PORT: 8099
       GUNICORN_CMD_ARGS: ${GUNICORN_CMD_ARGS:---reload}
+      NEO4J_ENABLED: ${NEO4J_ENABLED:-false}
+      NEO4J_URI: ${NEO4J_URI:-}
+      NEO4J_USER: ${NEO4J_USER:-}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-}
+      NEO4J_DATABASE: ${NEO4J_DATABASE:-neo4j}
     volumes:
       - ${PALACE_PATH:-./palace}:/app/palace:ro
       - ./app.py:/app/app.py:ro
