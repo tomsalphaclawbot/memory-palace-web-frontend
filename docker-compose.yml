@@ -16,3 +16,13 @@ services:
       interval: 30s
       timeout: 5s
       retries: 3
+
+  cloudflared-memory-palace-web-frontend:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-memory-palace-web-frontend
+    restart: unless-stopped
+    depends_on:
+      memory-palace-web-frontend:
+        condition: service_healthy
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARED_TUNNEL_TOKEN:-}
+    profiles: ["tunnel"]

@@ -17,7 +17,7 @@ and this project currently tracks changes on `main` until a first tagged release
 
 ### Changed
 - Docker and runtime configuration generalized for public re-use.
-- Removed hardcoded local paths and deployment-specific IDs from tracked config.
+- Removed hardcoded local paths and cloudflared IDs from tracked config.
 - Improved request validation for pagination params.
 - Removed deployment-specific references from public docs.
 - Updated default local mount/path examples to use `./palace`.

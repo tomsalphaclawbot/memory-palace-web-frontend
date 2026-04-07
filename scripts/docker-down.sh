@@ -10,4 +10,8 @@ if [[ -f ".env" ]]; then
   set +a
 fi
 
-docker compose down
+if [[ -n "${CLOUDFLARED_TUNNEL_TOKEN:-}" ]]; then
+  docker compose --profile tunnel down
+else
+  docker compose down
+fi

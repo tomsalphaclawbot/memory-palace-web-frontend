@@ -1,0 +1,10 @@
+# Optional alternative to token-based startup.
+# Not used by default in docker-compose.yml.
+
+tunnel: <your-tunnel-id>
+credentials-file: /etc/cloudflared/creds.json
+
+ingress:
+  - hostname: memory-palace.example.com
+    service: http://memory-palace-web-frontend:8099
+  - service: http_status:404
