@@ -14,7 +14,7 @@ DEFAULT_CONFIG_PATH = BASE_DIR / "config" / "palace.json"
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-3")
+    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-4")
     palace_root = load_palace_path_from_config()
     db_path = resolve_db_path(palace_root)
 
@@ -54,7 +54,18 @@ def create_app() -> Flask:
 
     @app.get("/api/wings")
     def wings():
+        limit = min(max(parse_int_arg("limit", 25), 1), 200)
+        offset = max(parse_int_arg("offset", 0), 0)
+
         with connect_readonly(db_path) as conn:
+            total = conn.execute(
+                """
+                SELECT COUNT(DISTINCT string_value) AS total
+                FROM embedding_metadata
+                WHERE key='wing'
+                """
+            ).fetchone()["total"]
+
             rows = conn.execute(
                 """
                 SELECT string_value AS wing, COUNT(*) AS drawer_count
@@ -62,15 +73,27 @@ def create_app() -> Flask:
                 WHERE key='wing'
                 GROUP BY string_value
                 ORDER BY drawer_count DESC, wing ASC
-                """
+                LIMIT ? OFFSET ?
+                """,
+                [limit, offset],
             ).fetchall()
-        return jsonify({"items": [dict(r) for r in rows]})
+
+        return jsonify(
+            {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "items": [dict(r) for r in rows],
+            }
+        )
 
     @app.get("/api/rooms")
     def rooms():
         wing = (request.args.get("wing") or "").strip()
+        limit = min(max(parse_int_arg("limit", 25), 1), 200)
+        offset = max(parse_int_arg("offset", 0), 0)
 
-        sql = """
+        base_cte = """
             WITH meta AS (
               SELECT
                 e.id,
@@ -80,25 +103,58 @@ def create_app() -> Flask:
               JOIN embedding_metadata m ON m.id=e.id
               GROUP BY e.id
             )
-            SELECT room, COUNT(*) AS drawer_count
-            FROM meta
         """
+
+        where_clause = ""
         params: list[Any] = []
         if wing:
-            sql += " WHERE wing = ?"
+            where_clause = "WHERE wing = ?"
             params.append(wing)
-        sql += " GROUP BY room ORDER BY drawer_count DESC, room ASC"
+
+        sql_count = (
+            base_cte
+            + f"""
+            SELECT COUNT(*) AS total
+            FROM (
+              SELECT room
+              FROM meta
+              {where_clause}
+              GROUP BY room
+            ) grouped
+            """
+        )
+
+        sql_rows = (
+            base_cte
+            + f"""
+            SELECT room, COUNT(*) AS drawer_count
+            FROM meta
+            {where_clause}
+            GROUP BY room
+            ORDER BY drawer_count DESC, room ASC
+            LIMIT ? OFFSET ?
+            """
+        )
 
         with connect_readonly(db_path) as conn:
-            rows = conn.execute(sql, params).fetchall()
-        return jsonify({"items": [dict(r) for r in rows]})
+            total = conn.execute(sql_count, params).fetchone()["total"]
+            rows = conn.execute(sql_rows, [*params, limit, offset]).fetchall()
+
+        return jsonify(
+            {
+                "total": total,
+                "limit": limit,
+                "offset": offset,
+                "items": [dict(r) for r in rows],
+            }
+        )
 
     @app.get("/api/drawers")
     def drawers():
         wing = (request.args.get("wing") or "").strip()
         room = (request.args.get("room") or "").strip()
         query = (request.args.get("q") or "").strip()
-        limit = min(max(parse_int_arg("limit", 50), 1), 200)
+        limit = min(max(parse_int_arg("limit", 24), 1), 200)
         offset = max(parse_int_arg("offset", 0), 0)
 
         where_clauses: list[str] = []
@@ -200,6 +256,76 @@ def create_app() -> Flask:
             return jsonify({"error": "drawer not found"}), 404
 
         return jsonify(dict(row))
+
+    @app.get("/api/graph")
+    def graph_data():
+        max_edges = min(max(parse_int_arg("max_edges", 400), 10), 2000)
+
+        with connect_readonly(db_path) as conn:
+            rows = conn.execute(
+                """
+                WITH meta AS (
+                  SELECT
+                    e.id,
+                    MAX(CASE WHEN m.key='wing' THEN m.string_value END) AS wing,
+                    MAX(CASE WHEN m.key='room' THEN m.string_value END) AS room
+                  FROM embeddings e
+                  JOIN embedding_metadata m ON m.id=e.id
+                  GROUP BY e.id
+                )
+                SELECT wing, room, COUNT(*) AS drawer_count
+                FROM meta
+                WHERE wing IS NOT NULL AND wing != ''
+                  AND room IS NOT NULL AND room != ''
+                GROUP BY wing, room
+                ORDER BY drawer_count DESC, wing ASC, room ASC
+                LIMIT ?
+                """,
+                [max_edges],
+            ).fetchall()
+
+        wing_totals: dict[str, int] = {}
+        room_totals: dict[str, int] = {}
+        edges: list[dict[str, Any]] = []
+
+        for row in rows:
+            wing = row["wing"]
+            room = row["room"]
+            weight = int(row["drawer_count"])
+            wing_totals[wing] = wing_totals.get(wing, 0) + weight
+            room_totals[room] = room_totals.get(room, 0) + weight
+            edges.append(
+                {
+                    "source": f"wing::{wing}",
+                    "target": f"room::{room}",
+                    "weight": weight,
+                    "wing": wing,
+                    "room": room,
+                }
+            )
+
+        nodes: list[dict[str, Any]] = []
+        for wing, total in sorted(wing_totals.items(), key=lambda kv: (-kv[1], kv[0])):
+            nodes.append(
+                {
+                    "id": f"wing::{wing}",
+                    "type": "wing",
+                    "label": wing,
+                    "count": total,
+                }
+            )
+
+        for room, total in sorted(room_totals.items(), key=lambda kv: (-kv[1], kv[0])):
+            nodes.append(
+                {
+                    "id": f"room::{room}",
+                    "type": "room",
+                    "label": room,
+                    "count": total,
+                }
+            )
+
+        return jsonify({"nodes": nodes, "edges": edges})
 
     return app
 
