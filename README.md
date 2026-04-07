@@ -58,9 +58,11 @@ cp .env.example .env
 ## Features
 
 - Read-only API over `chroma.sqlite3`
+- Top tabs for Browser, 3D View, Graph View, and Settings
 - Wing and room navigation
 - Drawer search and pagination
 - Drawer detail view
+- Dedicated `/settings` page for session-only palace path validation/launch
 - Works with a direct SQLite file path or palace root path
 - Optional Cloudflare Tunnel sidecar for Access-gated publishing
 

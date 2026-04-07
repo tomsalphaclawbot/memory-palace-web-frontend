@@ -3,52 +3,79 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Memory Palace Web Frontend</title>
+    <title>Memory Palace Browser</title>
     <link rel="stylesheet" href="/static/app.css" />
   </head>
   <body>
-    <header>
-      <h1>Memory Palace Web Frontend</h1>
-      <p>Point this UI at any MemPalace Chroma store and browse it live.</p>
-    </header>
-
-    <section class="controls">
-      <label>
-        Palace path
-        <input id="palaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
-      </label>
-      <button id="applyPalace">Apply</button>
-      <button id="refresh">Refresh</button>
-
-      <label>
-        Search
-        <input id="searchInput" type="text" placeholder="text contains..." />
-      </label>
-      <button id="searchBtn">Search</button>
-      <button id="clearBtn">Clear</button>
-    </section>
-
-    <section class="summary" id="summary"></section>
-
-    <main>
-      <aside>
-        <h2>Wings</h2>
-        <ul id="wings"></ul>
-
-        <h2>Rooms</h2>
-        <ul id="rooms"></ul>
-      </aside>
-
-      <section>
-        <h2>Drawers</h2>
-        <div id="drawerMeta"></div>
-        <div id="drawers"></div>
-        <div class="pager">
-          <button id="prevPage">Prev</button>
-          <button id="nextPage">Next</button>
+    <div class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">MemPalace Explorer</p>
+          <h1>Memory Palace Browser</h1>
+          <p class="subtitle">Browse a read-only palace store with searchable wings, rooms, and drawers.</p>
         </div>
+        <nav class="top-tabs" aria-label="View tabs">
+          <button class="tab active" data-view="browser">Browser</button>
+          <button class="tab" data-view="view3d">3D View</button>
+          <button class="tab" data-view="graph">Graph View</button>
+          <a class="tab link-tab" href="/settings">Settings</a>
+        </nav>
+      </header>
+
+      <section class="view active" id="view-browser" data-view-panel="browser">
+        <section class="controls panel">
+          <label>
+            Palace path
+            <input id="palaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
+          </label>
+          <button id="applyPalace">Apply</button>
+          <button id="refresh">Refresh</button>
+
+          <label>
+            Search
+            <input id="searchInput" type="text" placeholder="text contains..." />
+          </label>
+          <button id="searchBtn">Search</button>
+          <button id="clearBtn" class="ghost">Clear</button>
+        </section>
+
+        <section class="summary panel" id="summary"></section>
+
+        <main class="browser-grid panel">
+          <aside>
+            <h2>Wings</h2>
+            <ul id="wings"></ul>
+
+            <h2>Rooms</h2>
+            <ul id="rooms"></ul>
+          </aside>
+
+          <section>
+            <h2>Drawers</h2>
+            <div id="drawerMeta"></div>
+            <div id="drawers"></div>
+            <div class="pager">
+              <button id="prevPage" class="ghost">Prev</button>
+              <button id="nextPage">Next</button>
+            </div>
+          </section>
+        </main>
       </section>
-    </main>
+
+      <section class="view panel" id="view-3d" data-view-panel="view3d">
+        <h2>3D View</h2>
+        <p class="muted">
+          3D visualization is not wired yet. Use Browser for full read-only navigation today.
+        </p>
+      </section>
+
+      <section class="view panel" id="view-graph" data-view-panel="graph">
+        <h2>Graph View</h2>
+        <p class="muted">
+          Graph visualization is not wired yet. Use Browser for full filtering, search, and drawer drill-down.
+        </p>
+      </section>
+    </div>
 
     <dialog id="drawerDialog">
       <article>

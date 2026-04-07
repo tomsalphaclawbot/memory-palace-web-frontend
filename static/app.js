@@ -26,7 +26,35 @@ const el = {
   dialogTitle: document.getElementById('dialogTitle'),
   dialogBody: document.getElementById('dialogBody'),
   closeDialog: document.getElementById('closeDialog'),
+  viewTabs: Array.from(document.querySelectorAll('.top-tabs [data-view]')),
+  viewPanels: Array.from(document.querySelectorAll('[data-view-panel]')),
 };
+
+function normalizeViewFromHash() {
+  const raw = window.location.hash.replace(/^#/, '').trim().toLowerCase();
+  if (!raw) return 'browser';
+  if (raw === 'browser' || raw === 'view-browser') return 'browser';
+  if (raw === 'view3d' || raw === '3d' || raw === 'view-3d') return 'view3d';
+  if (raw === 'graph' || raw === 'view-graph') return 'graph';
+  return 'browser';
+}
+
+function setActiveView(view, updateHash = false) {
+  const nextView = view || 'browser';
+  el.viewTabs.forEach((tab) => {
+    tab.classList.toggle('active', tab.dataset.view === nextView);
+  });
+  el.viewPanels.forEach((panel) => {
+    panel.classList.toggle('active', panel.dataset.viewPanel === nextView);
+  });
+
+  if (!updateHash) return;
+  if (nextView === 'browser') {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  } else {
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}#${nextView}`);
+  }
+}
 
 function apiUrl(path, params = {}) {
   const url = new URL(path, window.location.origin);
@@ -239,9 +267,17 @@ el.nextPage.onclick = () => {
 };
 
 el.closeDialog.onclick = () => el.drawerDialog.close();
+el.viewTabs.forEach((tab) => {
+  tab.onclick = () => setActiveView(tab.dataset.view, true);
+});
+
+window.addEventListener('hashchange', () => {
+  setActiveView(normalizeViewFromHash());
+});
 
 (async function init() {
   try {
+    setActiveView(normalizeViewFromHash());
     await loadConfig();
     await refreshAll();
   } catch (err) {

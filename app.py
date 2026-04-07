@@ -15,6 +15,10 @@ def create_app() -> Flask:
     def index():
         return render_template("index.html")
 
+    @app.get("/settings")
+    def settings_page():
+        return render_template("settings.html")
+
     @app.get("/healthz")
     def healthz():
         return jsonify({"ok": True})

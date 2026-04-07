@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Memory Palace Settings</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">MemPalace Explorer</p>
+          <h1>Settings</h1>
+          <p class="subtitle">Configure palace path for this browser session.</p>
+        </div>
+        <nav class="top-tabs" aria-label="View tabs">
+          <a class="tab link-tab" href="/">Browser</a>
+          <a class="tab link-tab" href="/#view3d">3D View</a>
+          <a class="tab link-tab" href="/#graph">Graph View</a>
+          <a class="tab link-tab active" aria-current="page" href="/settings">Settings</a>
+        </nav>
+      </header>
+
+      <section class="panel settings-panel">
+        <h2>Palace Path</h2>
+        <p class="muted">
+          This value is client-side only and not persisted. It is appended to API calls as `?palace=...`.
+        </p>
+        <p class="notice">
+          Docker deployments may hard-wire `MEMORY_PALACE_PATH` inside the container. In that case, this override can be limited or unnecessary.
+        </p>
+
+        <label>
+          Palace path
+          <input id="settingsPalaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
+        </label>
+
+        <div class="action-row">
+          <button id="settingsLoadDefault">Load API default</button>
+          <button id="settingsValidate">Validate path</button>
+          <button id="settingsOpenBrowser">Open Browser with this path</button>
+        </div>
+
+        <div id="settingsStatus" class="status"></div>
+      </section>
+    </div>
+
+    <script src="/static/settings.js"></script>
+  </body>
+</html>
