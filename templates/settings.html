@@ -7,43 +7,45 @@
     <link rel="stylesheet" href="/static/app.css" />
   </head>
   <body>
-    <div class="page-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">MemPalace Explorer</p>
-          <h1>Settings</h1>
-          <p class="subtitle">Configure palace path for this browser session.</p>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">▮</span>
+          <span>Memory Palace</span>
         </div>
-        <nav class="top-tabs" aria-label="View tabs">
-          <a class="tab link-tab" href="/">Browser</a>
-          <a class="tab link-tab" href="/#view3d">3D View</a>
-          <a class="tab link-tab" href="/#graph">Graph View</a>
-          <a class="tab link-tab active" aria-current="page" href="/settings">Settings</a>
+
+        <nav class="side-nav" aria-label="View tabs">
+          <a class="nav-item link-nav" href="/">Browser</a>
+          <a class="nav-item link-nav" href="/#graph">Graph</a>
+          <a class="nav-item link-nav" href="/#view3d">3D</a>
+          <a class="nav-item link-nav active" aria-current="page" href="/settings">Settings</a>
         </nav>
-      </header>
 
-      <section class="panel settings-panel">
-        <h2>Palace Path</h2>
-        <p class="muted">
-          This value is client-side only and not persisted. It is appended to API calls as `?palace=...`.
-        </p>
-        <p class="notice">
-          Docker deployments may hard-wire `MEMORY_PALACE_PATH` inside the container. In that case, this override can be limited or unnecessary.
-        </p>
+        <div class="sidebar-dot" aria-hidden="true"></div>
+      </aside>
 
-        <label>
-          Palace path
-          <input id="settingsPalaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
-        </label>
+      <main class="workspace">
+        <section class="panel-card settings-panel">
+          <h1>Settings</h1>
+          <p class="muted">Configure palace path for this browser session.</p>
+          <p class="notice">
+            Docker setups may hard-wire <code>MEMORY_PALACE_PATH</code>. In that case this override can be unnecessary.
+          </p>
 
-        <div class="action-row">
-          <button id="settingsLoadDefault">Load API default</button>
-          <button id="settingsValidate">Validate path</button>
-          <button id="settingsOpenBrowser">Open Browser with this path</button>
-        </div>
+          <label>
+            Palace path
+            <input id="settingsPalaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
+          </label>
 
-        <div id="settingsStatus" class="status"></div>
-      </section>
+          <div class="action-row">
+            <button id="settingsLoadDefault">Load API default</button>
+            <button id="settingsValidate">Validate path</button>
+            <button id="settingsOpenBrowser">Open Browser</button>
+          </div>
+
+          <div id="settingsStatus" class="status"></div>
+        </section>
+      </main>
     </div>
 
     <script src="/static/settings.js"></script>

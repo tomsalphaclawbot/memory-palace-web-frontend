@@ -7,74 +7,88 @@
     <link rel="stylesheet" href="/static/app.css" />
   </head>
   <body>
-    <div class="page-shell">
-      <header class="topbar">
-        <div>
-          <p class="eyebrow">MemPalace Explorer</p>
-          <h1>Memory Palace Browser</h1>
-          <p class="subtitle">Browse a read-only palace store with searchable wings, rooms, and drawers.</p>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">▮</span>
+          <span>Memory Palace</span>
         </div>
-        <nav class="top-tabs" aria-label="View tabs">
-          <button class="tab active" data-view="browser">Browser</button>
-          <button class="tab" data-view="view3d">3D View</button>
-          <button class="tab" data-view="graph">Graph View</button>
-          <a class="tab link-tab" href="/settings">Settings</a>
+
+        <nav class="top-tabs side-nav" aria-label="View tabs">
+          <button class="nav-item active" data-view="browser">Browser</button>
+          <button class="nav-item" data-view="graph">Graph</button>
+          <button class="nav-item" data-view="view3d">3D</button>
+          <a class="nav-item link-nav" href="/settings">Settings</a>
         </nav>
-      </header>
 
-      <section class="view active" id="view-browser" data-view-panel="browser">
-        <section class="controls panel">
-          <label>
-            Palace path
-            <input id="palaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
-          </label>
-          <button id="applyPalace">Apply</button>
-          <button id="refresh">Refresh</button>
+        <div class="sidebar-dot" aria-hidden="true"></div>
+      </aside>
 
-          <label>
-            Search
-            <input id="searchInput" type="text" placeholder="text contains..." />
-          </label>
-          <button id="searchBtn">Search</button>
-          <button id="clearBtn" class="ghost">Clear</button>
+      <main class="workspace">
+        <section class="view active" id="view-browser" data-view-panel="browser">
+          <header class="workspace-top">
+            <div class="scope-tabs" role="tablist" aria-label="Data sections">
+              <button class="scope-tab active" data-target="wingsPanel">Wings</button>
+              <button class="scope-tab" data-target="roomsPanel">Rooms</button>
+              <button class="scope-tab" data-target="drawersPanel">Drawers</button>
+              <button class="scope-tab" data-target="drawersPanel">Snippets</button>
+            </div>
+
+            <div class="searchbar">
+              <input id="searchInput" type="text" placeholder="Search memories..." />
+              <button id="searchBtn">Search</button>
+              <button id="clearBtn" class="ghost">Clear</button>
+            </div>
+          </header>
+
+          <section class="summary-strip" id="summary"></section>
+
+          <section class="path-controls">
+            <label>
+              Palace path
+              <input id="palaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
+            </label>
+            <button id="applyPalace">Apply</button>
+            <button id="refresh" class="ghost">Refresh</button>
+          </section>
+
+          <section class="browser-layout">
+            <div class="column-left">
+              <article class="panel-card" id="wingsPanel">
+                <h2>Wings</h2>
+                <ul id="wings"></ul>
+              </article>
+
+              <article class="panel-card" id="roomsPanel">
+                <h2>Rooms</h2>
+                <ul id="rooms"></ul>
+              </article>
+            </div>
+
+            <article class="panel-card drawers-panel" id="drawersPanel">
+              <div class="panel-head">
+                <h2>Drawers</h2>
+                <div id="drawerMeta"></div>
+              </div>
+              <div id="drawers"></div>
+              <div class="pager">
+                <button id="prevPage" class="ghost">Prev</button>
+                <button id="nextPage">Next</button>
+              </div>
+            </article>
+          </section>
         </section>
 
-        <section class="summary panel" id="summary"></section>
+        <section class="view panel-card" id="view-graph" data-view-panel="graph">
+          <h2>Graph View</h2>
+          <p class="muted">Graph visualization is coming next. Browser view is fully functional today.</p>
+        </section>
 
-        <main class="browser-grid panel">
-          <aside>
-            <h2>Wings</h2>
-            <ul id="wings"></ul>
-
-            <h2>Rooms</h2>
-            <ul id="rooms"></ul>
-          </aside>
-
-          <section>
-            <h2>Drawers</h2>
-            <div id="drawerMeta"></div>
-            <div id="drawers"></div>
-            <div class="pager">
-              <button id="prevPage" class="ghost">Prev</button>
-              <button id="nextPage">Next</button>
-            </div>
-          </section>
-        </main>
-      </section>
-
-      <section class="view panel" id="view-3d" data-view-panel="view3d">
-        <h2>3D View</h2>
-        <p class="muted">
-          3D visualization is not wired yet. Use Browser for full read-only navigation today.
-        </p>
-      </section>
-
-      <section class="view panel" id="view-graph" data-view-panel="graph">
-        <h2>Graph View</h2>
-        <p class="muted">
-          Graph visualization is not wired yet. Use Browser for full filtering, search, and drawer drill-down.
-        </p>
-      </section>
+        <section class="view panel-card" id="view-3d" data-view-panel="view3d">
+          <h2>3D View</h2>
+          <p class="muted">3D exploration is coming next. Browser view is fully functional today.</p>
+        </section>
+      </main>
     </div>
 
     <dialog id="drawerDialog">
