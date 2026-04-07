@@ -9,26 +9,67 @@ Web UI for browsing a MemPalace store live.
 - Search drawer text
 - Open full drawer content
 - Paginated live view of drawers
+- Deploy behind Cloudflare Tunnel on its own subdomain
 
-## Run
+## Local run (non-Docker)
 
 ```bash
 cd projects/memory-palace-web-frontend
 ./scripts/run.sh
 ```
 
-Then open: `http://127.0.0.1:8099`
+Open: `http://127.0.0.1:8099`
+
+## Docker run (recommended)
+
+```bash
+cd projects/memory-palace-web-frontend
+./scripts/docker-up.sh
+```
+
+This starts:
+- `memory-palace-web-frontend` (Flask/Gunicorn)
+- `cloudflared-memory-palace-web-frontend` (Cloudflare Tunnel)
+
+Endpoints:
+- Local: `http://127.0.0.1:8099`
+- Public (tunnel): `https://memory-palace.tomsalphaclawbot.work`
+
+Stop stack:
+
+```bash
+./scripts/docker-down.sh
+```
+
+Logs:
+
+```bash
+./scripts/docker-logs.sh
+```
+
+## SQLite mount model in Docker
+
+Yes, the app runs in Docker and reads SQLite via bind mount.
+
+Least-privilege default: only one palace path is mounted read-only.
+
+Default mounted path:
+
+`/Users/openclaw/.openclaw/workspace/projects/alpha-mem-palace/data/palace`
+
+No full home-directory mount is used.
 
 ## Point to a different palace
 
-Set `MEMORY_PALACE_PATH` before starting.
-
-Examples:
+Set `PALACE_PATH` when launching (this controls both mount and default runtime path):
 
 ```bash
-MEMORY_PALACE_PATH=/path/to/palace ./scripts/run.sh
-MEMORY_PALACE_PATH=/path/to/chroma.sqlite3 ./scripts/run.sh
+PALACE_PATH=/Users/openclaw/path/to/another/palace ./scripts/docker-up.sh
 ```
+
+or, if that path is already mounted, override per API request with query param:
+
+`?palace=/Users/openclaw/path/to/palace`
 
 Path resolution supports:
 - direct sqlite file path
@@ -45,4 +86,4 @@ Path resolution supports:
 - `GET /api/drawers?wing=&room=&q=&limit=&offset=`
 - `GET /api/drawer/<embedding_id>`
 
-All APIs accept optional `?palace=/path/to/palace` to override the default path per request.
+All APIs accept optional `?palace=/path/to/palace`.

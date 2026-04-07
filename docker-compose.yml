@@ -1,0 +1,24 @@
+services:
+  memory-palace-web-frontend:
+    build: .
+    container_name: memory-palace-web-frontend
+    restart: unless-stopped
+    environment:
+      # Point this to exactly one palace path on host (or one mounted sqlite file path).
+      MEMORY_PALACE_PATH: ${PALACE_PATH:-/Users/openclaw/.openclaw/workspace/projects/alpha-mem-palace/data/palace}
+    # Least privilege: mount only the selected palace path, read-only.
+    volumes:
+      - ${PALACE_PATH:-/Users/openclaw/.openclaw/workspace/projects/alpha-mem-palace/data/palace}:${PALACE_PATH:-/Users/openclaw/.openclaw/workspace/projects/alpha-mem-palace/data/palace}:ro
+    ports:
+      - "127.0.0.1:8099:8099"
+
+  cloudflared-memory-palace-web-frontend:
+    image: cloudflare/cloudflared:latest
+    container_name: cloudflared-memory-palace-web-frontend
+    restart: unless-stopped
+    depends_on:
+      - memory-palace-web-frontend
+    command: tunnel --no-autoupdate --config /etc/cloudflared/config.yml run
+    volumes:
+      - ./cloudflared-config.yml:/etc/cloudflared/config.yml:ro
+      - /Users/openclaw/.cloudflared/e6fab79b-bfed-4084-8475-c29606aa71f8.json:/etc/cloudflared/creds.json:ro

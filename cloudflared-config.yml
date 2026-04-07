@@ -1,0 +1,7 @@
+tunnel: e6fab79b-bfed-4084-8475-c29606aa71f8
+credentials-file: /etc/cloudflared/creds.json
+
+ingress:
+  - hostname: memory-palace.tomsalphaclawbot.work
+    service: http://memory-palace-web-frontend:8099
+  - service: http_status:404
