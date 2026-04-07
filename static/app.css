@@ -328,6 +328,24 @@ li button.active-filter {
   min-width: 200px;
 }
 
+.graph-engine-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.graph-engine-tab {
+  background: #f0f3ff;
+  color: #2c3553;
+  border: 1px solid #d8e1ff;
+}
+
+.graph-engine-tab.active {
+  background: #dfe8ff;
+  border-color: #97adf0;
+}
+
 .graph-wrap {
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -335,13 +353,18 @@ li button.active-filter {
   overflow: hidden;
   min-height: 380px;
   margin: 10px 0;
+  position: relative;
 }
 
-#graphCanvas {
+.graph-engine-panel {
   width: 100%;
   height: min(68vh, 760px);
-  display: block;
+  display: none;
   touch-action: none;
+}
+
+.graph-engine-panel.active {
+  display: block;
 }
 
 .graph-edge {
@@ -495,7 +518,8 @@ dialog pre {
   }
 
   .graph-toolbar button,
-  .searchbar button {
+  .searchbar button,
+  .graph-engine-tab {
     padding: 7px 9px;
     font-size: 12px;
   }

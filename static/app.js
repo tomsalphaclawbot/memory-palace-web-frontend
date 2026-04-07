@@ -404,15 +404,15 @@ function ensureGraphViewReady() {
     throw new Error('Graph renderer failed to initialize');
   }
 
-  window.GraphView.init(
-    'graphCanvas',
-    'graphWrap',
-    'graphSearchInput',
-    'graphClearSearchBtn',
-    'graphStatus',
-    'graphLegend',
-    'graphResetViewBtn'
-  );
+  window.GraphView.init({
+    wrapId: 'graphWrap',
+    searchId: 'graphSearchInput',
+    clearSearchId: 'graphClearSearchBtn',
+    statusId: 'graphStatus',
+    legendId: 'graphLegend',
+    resetViewId: 'graphResetViewBtn',
+    engineTabSelector: '.graph-engine-tab',
+  });
 
   graphViewReady = true;
 }

@@ -14,7 +14,7 @@ DEFAULT_CONFIG_PATH = BASE_DIR / "config" / "palace.json"
 
 def create_app() -> Flask:
     app = Flask(__name__)
-    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-5")
+    asset_version = os.getenv("ASSET_VERSION", "2026-04-07-ui-refresh-6")
     palace_root = load_palace_path_from_config()
     db_path = resolve_db_path(palace_root)
 

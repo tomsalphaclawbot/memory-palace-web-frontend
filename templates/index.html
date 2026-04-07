@@ -113,8 +113,16 @@
               <button id="graphRefreshBtn" class="ghost">Refresh Graph</button>
             </div>
 
+            <div class="graph-engine-tabs" role="tablist" aria-label="Graph renderer options">
+              <button class="graph-engine-tab active" data-graph-engine="sigma">Sigma.js</button>
+              <button class="graph-engine-tab" data-graph-engine="cytoscape">Cytoscape.js</button>
+              <button class="graph-engine-tab" data-graph-engine="g6">AntV G6</button>
+            </div>
+
             <div class="graph-wrap" id="graphWrap">
-              <canvas id="graphCanvas"></canvas>
+              <div id="graphSigma" class="graph-engine-panel active"></div>
+              <div id="graphCytoscape" class="graph-engine-panel"></div>
+              <div id="graphG6" class="graph-engine-panel"></div>
             </div>
             <div class="panel-meta" id="graphLegend"></div>
             <div class="panel-meta" id="graphStatus"></div>
@@ -138,6 +146,10 @@
       </article>
     </dialog>
 
+    <script src="https://unpkg.com/graphology@0.25.4/dist/graphology.umd.min.js"></script>
+    <script src="https://unpkg.com/sigma@2.4.0/build/sigma.min.js"></script>
+    <script src="https://unpkg.com/cytoscape@3.29.2/dist/cytoscape.min.js"></script>
+    <script src="https://unpkg.com/@antv/g6@4.8.25/dist/g6.min.js"></script>
     <script src="{{ url_for('static', filename='graph-view.js') }}?v={{ asset_version }}"></script>
     <script src="{{ url_for('static', filename='app.js') }}?v={{ asset_version }}"></script>
   </body>
