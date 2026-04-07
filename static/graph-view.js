@@ -1,4 +1,4 @@
-/* graph-view.js — Multi-renderer graph explorer (Sigma.js, Cytoscape.js, AntV G6 + Vis, D3, ForceGraph) */
+/* graph-view.js — Multi-renderer graph explorer (Sigma.js, Cytoscape.js, AntV G6 + Vis, D3, ForceGraph, Neo4j) */
 (function () {
   'use strict';
 
@@ -37,6 +37,7 @@
       vis: null,
       d3: null,
       force: null,
+      neo4: null,
     },
   };
 
@@ -47,6 +48,7 @@
     vis: createVisEngine(),
     d3: createD3Engine(),
     force: createForceGraphEngine(),
+    neo4: createNeo4Engine(),
   };
 
   window.GraphView = {
@@ -73,6 +75,7 @@
     ui.panels.vis = document.getElementById('graphVis');
     ui.panels.d3 = document.getElementById('graphD3');
     ui.panels.force = document.getElementById('graphForce');
+    ui.panels.neo4 = document.getElementById('graphNeo4');
 
     if (!ui.wrap) throw new Error('Graph wrapper missing');
 
@@ -104,7 +107,7 @@
 
     if (ui.legend) {
       ui.legend.textContent =
-        'Renderers: Sigma.js, Cytoscape.js, AntV G6, vis-network, D3 Force, ForceGraph. Click room to expand/collapse drawers. Click wing to focus neighborhood. Hover highlights local links.';
+        'Renderers: Sigma.js, Cytoscape.js, AntV G6, vis-network, D3 Force, ForceGraph, Neo4j. Click room to expand/collapse drawers. Click wing to focus neighborhood. Hover highlights local links.';
     }
 
     setEngine(state.engine);
@@ -1064,6 +1067,209 @@
         this.graph = null;
       },
     };
+  }
+
+  function createNeo4Engine() {
+    return {
+      label: 'Neo4j',
+      network: null,
+      nodesData: null,
+      edgesData: null,
+      graphData: null,
+      ctx: null,
+      hoveredNodeId: null,
+      render(graphData, ctx) {
+        const panel = ui.panels.neo4;
+        if (!panel) return;
+
+        const visGlobal = window.vis && (window.vis.default || window.vis);
+        if (!visGlobal || typeof visGlobal.Network !== 'function') {
+          setStatus('Neo4j renderer unavailable, check vis-network CDN load.');
+          return;
+        }
+
+        this.destroy();
+        this.graphData = graphData;
+        this.ctx = ctx;
+
+        this.nodesData = new visGlobal.DataSet(
+          graphData.nodes.map((node) => ({
+            id: node.id,
+            label: neo4Label(node),
+            title: neo4Title(node),
+            shape: 'dot',
+            size: neo4Size(node),
+            color: {
+              background: neo4Color(node),
+              border: '#dce6ff',
+              highlight: { background: '#f4f8ff', border: '#ffffff' },
+            },
+            font: { color: '#f4f7ff', size: 11, face: 'Inter, system-ui' },
+            raw: node,
+          }))
+        );
+
+        this.edgesData = new visGlobal.DataSet(
+          graphData.edges.map((edge, index) => ({
+            id: `e-${index}-${edge.source}-${edge.target}`,
+            from: edge.source,
+            to: edge.target,
+            label: neo4Rel(edge),
+            arrows: 'to',
+            width: Math.max(1, Math.min(4, (edge.weight || 1) / 6)),
+            color: { color: 'rgba(168,184,232,0.58)' },
+            font: { color: '#94a4d9', size: 9, strokeWidth: 0 },
+            smooth: { enabled: true, type: 'dynamic', roundness: 0.28 },
+          }))
+        );
+
+        this.network = new visGlobal.Network(
+          panel,
+          { nodes: this.nodesData, edges: this.edgesData },
+          {
+            autoResize: true,
+            interaction: {
+              hover: true,
+              dragNodes: true,
+              dragView: true,
+              zoomView: true,
+              hoverConnectedEdges: true,
+              tooltipDelay: 120,
+            },
+            nodes: {
+              borderWidth: 1.1,
+              borderWidthSelected: 2.4,
+              scaling: { min: 7, max: 28 },
+            },
+            edges: {
+              arrows: { to: { enabled: true, scaleFactor: 0.55 } },
+              color: { color: 'rgba(168,184,232,0.58)', highlight: '#c7d7ff' },
+            },
+            physics: {
+              enabled: true,
+              solver: 'barnesHut',
+              stabilization: { enabled: true, iterations: 140 },
+              barnesHut: {
+                gravitationalConstant: -2500,
+                springLength: 130,
+                springConstant: 0.032,
+                damping: 0.2,
+              },
+            },
+          }
+        );
+
+        this.network.on('click', (params) => {
+          const id = params && params.nodes && params.nodes[0];
+          if (!id || !this.nodesData) return;
+          const node = this.nodesData.get(id);
+          if (node && node.raw) ctx.onNodeClick(node.raw);
+        });
+
+        this.network.on('hoverNode', (params) => {
+          this.hoveredNodeId = params.node;
+          this.applyFocus();
+          const node = this.nodesData && this.nodesData.get(params.node);
+          if (node && node.raw) {
+            const type = String(node.raw.type || '').toUpperCase();
+            ctx.setStatus(`Neo4j hover: (${type}) ${node.raw.label}`);
+          }
+        });
+
+        this.network.on('blurNode', () => {
+          this.hoveredNodeId = null;
+          this.applyFocus();
+        });
+
+        this.applyFocus();
+      },
+      applyFocus() {
+        if (!this.nodesData || !this.edgesData || !this.ctx || !this.graphData) return;
+
+        const focusId = this.hoveredNodeId || this.ctx.focusNodeId;
+        const highlightSet = focusId ? this.ctx.getNeighborhood(focusId) : null;
+
+        this.nodesData.update(
+          this.graphData.nodes.map((node) => {
+            const inFocus = !highlightSet || highlightSet.has(node.id);
+            return {
+              id: node.id,
+              color: {
+                background: inFocus ? neo4Color(node) : COLORS.dim,
+                border: this.ctx.focusNodeId === node.id ? COLORS.focus : '#dce6ff',
+              },
+              font: { color: inFocus ? '#f4f7ff' : '#6f7890', size: 11, face: 'Inter, system-ui' },
+              borderWidth: this.ctx.focusNodeId === node.id ? 2.5 : 1.1,
+              label: neo4Label(node),
+            };
+          })
+        );
+
+        this.edgesData.update(
+          this.graphData.edges.map((edge, index) => {
+            const linked = !highlightSet || highlightSet.has(edge.source) || highlightSet.has(edge.target);
+            return {
+              id: `e-${index}-${edge.source}-${edge.target}`,
+              color: { color: linked ? 'rgba(183,203,255,0.72)' : COLORS.dim },
+              width: linked ? Math.max(1, Math.min(4, (edge.weight || 1) / 6)) : 0.6,
+              font: { color: linked ? '#9bb0ea' : '#5e6680', size: 9, strokeWidth: 0 },
+            };
+          })
+        );
+      },
+      resize() {
+        if (this.network) this.network.redraw();
+      },
+      suspend() {
+        this.hoveredNodeId = null;
+      },
+      resetView() {
+        if (!this.network) return;
+        this.hoveredNodeId = null;
+        this.network.fit({ animation: { duration: 350 } });
+        this.applyFocus();
+      },
+      destroy() {
+        if (this.network && typeof this.network.destroy === 'function') {
+          this.network.destroy();
+        }
+        this.network = null;
+        this.nodesData = null;
+        this.edgesData = null;
+      },
+    };
+  }
+
+  function neo4Color(node) {
+    if (node.type === 'wing') return '#4a6cf7';
+    if (node.type === 'room') return '#2fb47c';
+    if (node.type === 'drawer') return '#f39c4a';
+    return '#9aa5c5';
+  }
+
+  function neo4Size(node) {
+    if (node.type === 'wing') return 19;
+    if (node.type === 'room') return 13;
+    return 9;
+  }
+
+  function neo4Label(node) {
+    const type = String(node.type || '').toUpperCase();
+    return `(:${type}) ${node.label || node.id || ''}`.trim();
+  }
+
+  function neo4Title(node) {
+    const type = String(node.type || '').toUpperCase();
+    const count = node.count != null ? `\ncount: ${node.count}` : '';
+    return `(${type}) ${node.label || node.id || ''}${count}`;
+  }
+
+  function neo4Rel(edge) {
+    if (edge.room && edge.wing) return ':CONTAINS_ROOM';
+    if (String(edge.source || '').startsWith('room::') && String(edge.target || '').startsWith('drawer::')) {
+      return ':HAS_DRAWER';
+    }
+    return ':CONNECTED_TO';
   }
 
 
