@@ -8,7 +8,7 @@ services:
       HOST: 0.0.0.0
       PORT: 8099
     volumes:
-      - ${PALACE_PATH:?Set PALACE_PATH in .env}:/palace:ro
+      - ${PALACE_PATH:-./palace}:/palace:ro
     ports:
       - "${BIND_HOST:-127.0.0.1}:${PORT:-8099}:8099"
     healthcheck:

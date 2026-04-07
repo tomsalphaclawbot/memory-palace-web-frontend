@@ -2,14 +2,6 @@
 
 A lightweight, read-only web UI and JSON API for browsing a MemPalace SQLite store.
 
-This repository is the open-source frontend project.
-
-## Related projects
-
-- **MemPalace (fork, public):** <https://github.com/tomsalphaclawbot/mempalace>
-- **Alpha Mem Palace (operations, private):** internal runtime/data project
-- **Memory Palace Web Frontend (this repo, public):** <https://github.com/tomsalphaclawbot/memory-palace-web-frontend>
-
 ## Features
 
 - Read-only API over `chroma.sqlite3`
@@ -45,7 +37,7 @@ Open <http://127.0.0.1:8099>
 
 ```bash
 cp .env.example .env
-# set PALACE_PATH to an absolute host path to your palace directory or sqlite file
+# optionally set PALACE_PATH (defaults to ./palace)
 ./scripts/docker-up.sh
 ```
 

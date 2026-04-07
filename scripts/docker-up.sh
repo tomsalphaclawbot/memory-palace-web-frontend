@@ -13,10 +13,8 @@ set -a
 source .env
 set +a
 
-if [[ -z "${PALACE_PATH:-}" ]]; then
-  echo "❌ PALACE_PATH is required in .env"
-  exit 1
-fi
+PALACE_PATH="${PALACE_PATH:-./palace}"
+export PALACE_PATH
 
 if [[ -n "${CLOUDFLARED_TUNNEL_TOKEN:-}" ]]; then
   docker compose --profile tunnel up -d --build
