@@ -2,6 +2,10 @@
 
 A lightweight, read-only web UI and JSON API for browsing a MemPalace SQLite store.
 
+## Related projects
+
+- Upstream MemPalace: <https://github.com/milla-jovovich/mempalace>
+
 ## Features
 
 - Read-only API over `chroma.sqlite3`
