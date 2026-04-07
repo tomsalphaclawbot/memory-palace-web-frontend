@@ -57,6 +57,12 @@ Force a rebuild only when dependencies/base image changed:
 
 Open <http://127.0.0.1:8099>
 
+## Screenshots
+
+![Memory Palace UI screenshot 1](./docs/screenshots/IMG_7577.jpg)
+
+![Memory Palace UI screenshot 2](./docs/screenshots/IMG_7578.jpg)
+
 ## Features
 
 - Read-only API over `chroma.sqlite3`
