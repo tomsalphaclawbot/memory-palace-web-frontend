@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Memory Palace Web Frontend</title>
+    <link rel="stylesheet" href="/static/app.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Memory Palace Web Frontend</h1>
+      <p>Point this UI at any MemPalace Chroma store and browse it live.</p>
+    </header>
+
+    <section class="controls">
+      <label>
+        Palace path
+        <input id="palaceInput" type="text" placeholder="/path/to/palace or /path/to/chroma.sqlite3" />
+      </label>
+      <button id="applyPalace">Apply</button>
+      <button id="refresh">Refresh</button>
+
+      <label>
+        Search
+        <input id="searchInput" type="text" placeholder="text contains..." />
+      </label>
+      <button id="searchBtn">Search</button>
+      <button id="clearBtn">Clear</button>
+    </section>
+
+    <section class="summary" id="summary"></section>
+
+    <main>
+      <aside>
+        <h2>Wings</h2>
+        <ul id="wings"></ul>
+
+        <h2>Rooms</h2>
+        <ul id="rooms"></ul>
+      </aside>
+
+      <section>
+        <h2>Drawers</h2>
+        <div id="drawerMeta"></div>
+        <div id="drawers"></div>
+        <div class="pager">
+          <button id="prevPage">Prev</button>
+          <button id="nextPage">Next</button>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="drawerDialog">
+      <article>
+        <h3 id="dialogTitle">Drawer</h3>
+        <pre id="dialogBody"></pre>
+        <button id="closeDialog">Close</button>
+      </article>
+    </dialog>
+
+    <script src="/static/app.js"></script>
+  </body>
+</html>
